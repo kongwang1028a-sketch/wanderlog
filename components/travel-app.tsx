@@ -744,7 +744,7 @@ export function TravelApp() {
           <DialogHeader>
             <DialogTitle>分享給朋友</DialogTitle>
             <DialogDescription>
-              朋友用自己的手機或電腦打開，會看到空白地圖。旅程只留在各自的瀏覽器，不會混在一起，也不會上傳。
+              朋友用自己的手機或電腦打開，會看到空白地圖。旅程只留在各自的瀏覽器，不會混在一起，也不會上傳。若網站有進入密碼，請另外把密碼傳給朋友，不要寫進網址。
             </DialogDescription>
           </DialogHeader>
           {shareOpen && <ShareLinkNotice />}
