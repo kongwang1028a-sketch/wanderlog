@@ -6,7 +6,6 @@ import {
   MapContainer,
   Marker,
   Polyline,
-  TileLayer,
   Tooltip,
   ZoomControl,
   useMap,
@@ -170,6 +169,34 @@ function PickLayer({
   return null
 }
 
+class TraditionalTileLayer extends L.TileLayer {
+  override createTile(coords: L.Coords, done: L.DoneCallback) {
+    const tile = document.createElement("img")
+    tile.referrerPolicy = "no-referrer"
+    tile.alt = ""
+    L.DomEvent.on(tile, "load", () => this._tileOnLoad(done, tile))
+    L.DomEvent.on(tile, "error", () => this._tileOnError(done, tile, new Error("tile")))
+    tile.src = this.getTileUrl(coords)
+    return tile
+  }
+}
+
+function TraditionalTiles() {
+  const map = useMap()
+  useEffect(() => {
+    const layer = new TraditionalTileLayer("https://{s}.google.com/vt/lyrs=m&hl=zh-TW&x={x}&y={y}&z={z}", {
+      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+      maxZoom: 20,
+      attribution: "&copy; Google",
+    })
+    layer.addTo(map)
+    return () => {
+      map.removeLayer(layer)
+    }
+  }, [map])
+  return null
+}
+
 function ResizeFix() {
   const map = useMap()
   useEffect(() => {
@@ -249,10 +276,7 @@ export default function WorldMap({
       className={pickEnabled ? "is-picking h-full w-full" : "h-full w-full"}
       attributionControl
     >
-      <TileLayer
-        attribution="Tiles &copy; Esri &mdash; Esri, HERE, Garmin, USGS, OSM"
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-      />
+      <TraditionalTiles />
       <ZoomControl position="topleft" />
       <ResizeFix />
       <CameraRig camera={camera} />
