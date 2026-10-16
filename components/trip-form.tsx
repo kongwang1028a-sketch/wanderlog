@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ChevronDown, ChevronUp, ImagePlus, Link2, Trash2, X } from "lucide-react"
+import { ChevronDown, ChevronUp, ClipboardPaste, ImagePlus, Link2, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,11 +9,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { countryOptions, type City } from "@/lib/cities"
 import { detectPhotoKind, isHttpUrl, photoKindLabel } from "@/lib/format"
 import { nearestCity, searchCities, stopFromCity } from "@/lib/geo"
+import { parseItinerary } from "@/lib/itinerary"
 import { compressImage } from "@/lib/images"
 import { getPhotoBlob } from "@/lib/storage"
 import type { PhotoRef, Stop, Trip } from "@/lib/types"
 
 const MAX_UPLOADS = 24
+
+const OUTLINE_PLACEHOLDER = `關西自由行
+2024/11/2-11/7
+11/2 大阪 道頓堀
+11/4-11/5 京都 清水寺
+11/6 奈良`
 
 type PendingPhoto = {
   id: string
@@ -53,6 +60,9 @@ export function TripForm({
   const [savedPreviews, setSavedPreviews] = useState<Record<string, string>>({})
   const [query, setQuery] = useState("")
   const [error, setError] = useState("")
+  const [outline, setOutline] = useState("")
+  const [importSummary, setImportSummary] = useState("")
+  const [unmatchedLines, setUnmatchedLines] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [linkUrl, setLinkUrl] = useState("")
   const [linkCaption, setLinkCaption] = useState("")
@@ -275,12 +285,39 @@ export function TripForm({
     }
   }
 
+  function applyOutline() {
+    const text = outline.trim()
+    if (!text) {
+      setError("請先貼上行程大綱")
+      setImportSummary("")
+      setUnmatchedLines([])
+      return
+    }
+    const parsed = parseItinerary(text)
+    setUnmatchedLines(parsed.unmatched)
+    if (parsed.stops.length === 0) {
+      setImportSummary(parsed.summary)
+      setError("")
+      return
+    }
+    const hadStops = stops.length > 0
+    if (!title.trim() && parsed.title) setTitle(parsed.title.slice(0, 60))
+    if (parsed.startDate) setStartDate(parsed.startDate)
+    if (parsed.endDate) setEndDate(parsed.endDate)
+    setStops(parsed.stops.map((stop) => stopFromCity(stop.city, stop.date, stop.note)))
+    if (!notes.trim()) setNotes(text.slice(0, 2000))
+    const replaced = hadStops ? "原本的停留點已換成這份大綱。" : ""
+    setImportSummary(replaced ? `${parsed.summary}。${replaced}` : parsed.summary)
+    setError("")
+  }
+
   function requestCancel() {
     const dirty =
       title.trim() !== (initial?.title ?? "") ||
       stops.length !== (initial?.stops.length ?? 0) ||
       pending.length > 0 ||
-      notes.trim() !== (initial?.notes ?? "")
+      notes.trim() !== (initial?.notes ?? "") ||
+      outline.trim() !== ""
     if (dirty && !window.confirm("放棄這次編輯？")) return
     onCancel()
   }
@@ -305,6 +342,38 @@ export function TripForm({
         </Button>
       </div>
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-4">
+        <section className="space-y-2 rounded-2xl border border-gold/40 bg-[#f8f1e4] p-3">
+          <div className="flex items-center gap-2">
+            <ClipboardPaste className="size-4 text-gold" />
+            <Label htmlFor="trip-outline">貼上行程大綱</Label>
+          </div>
+          <p className="text-xs leading-5 text-muted-foreground">
+            整段貼上即可。會讀出日期與城市，填進下面的名稱、日期與停留點。
+          </p>
+          <Textarea
+            id="trip-outline"
+            value={outline}
+            maxLength={8000}
+            placeholder={OUTLINE_PLACEHOLDER}
+            className="min-h-36 bg-card"
+            onChange={(event) => setOutline(event.target.value)}
+          />
+          <Button type="button" variant="secondary" className="w-full" onClick={applyOutline}>
+            分析並匯入
+          </Button>
+          {(importSummary || unmatchedLines.length > 0) && (
+            <div className="rounded-xl bg-card px-3 py-2 text-sm leading-6">
+              {importSummary && <p>{importSummary}</p>}
+              {unmatchedLines.length > 0 && (
+                <ul className="mt-1 list-disc pl-4 text-xs leading-5 text-muted-foreground">
+                  {unmatchedLines.map((line, index) => (
+                    <li key={`${index}-${line}`}>{line}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </section>
         <div className="space-y-2">
           <Label htmlFor="trip-title">旅程名稱</Label>
           <Input
@@ -412,7 +481,7 @@ export function TripForm({
 
           {stops.length === 0 ? (
             <p className="rounded-2xl bg-secondary px-3 py-3 text-sm leading-6 text-muted-foreground">
-              依造訪順序加入城市。桌面版可以直接點地圖；手機請按「改在地圖上選」。
+              依造訪順序加入城市，或先在上方貼上整段行程。桌面版可以直接點地圖；手機請按「改在地圖上選」。
             </p>
           ) : (
             <ol className="space-y-2">

@@ -89,32 +89,67 @@ function CameraRig({ camera }: { camera: Camera }) {
   const key = cameraKey(camera)
   useEffect(() => {
     if (camera.kind === "idle") return
-    if (camera.kind === "fly") {
-      const zoom = camera.zoom
-      const projected = map.project([camera.lat, camera.lng], zoom)
-      const center = map.unproject(projected.add([camera.offsetX ?? 0, camera.offsetY ?? 0]), zoom)
-      map.flyTo(center, zoom, { duration: 0.75 })
-      return
+    let cancelled = false
+
+    const move = () => {
+      if (cancelled) return false
+      if (map.getSize().x < 2 || map.getSize().y < 2) {
+        map.invalidateSize({ pan: false })
+      }
+      const size = map.getSize()
+      if (size.x < 2 || size.y < 2) return false
+
+      if (camera.kind === "fly") {
+        if (!Number.isFinite(camera.lat) || !Number.isFinite(camera.lng)) return false
+        const zoom = camera.zoom
+        const projected = map.project([camera.lat, camera.lng], zoom)
+        const center = map.unproject(projected.add([camera.offsetX ?? 0, camera.offsetY ?? 0]), zoom)
+        map.flyTo(center, zoom, { duration: 0.75 })
+        return true
+      }
+
+      const points = camera.points.filter(
+        (point): point is [number, number] => Number.isFinite(point[0]) && Number.isFinite(point[1]),
+      )
+      if (points.length === 0) return false
+      const padRight = camera.padRight ?? 56
+      const padBottom = camera.padBottom ?? 56
+      const maxZoom = camera.maxZoom ?? (points.length <= 4 ? 8 : 5)
+      if (points.length === 1) {
+        const point = points[0]
+        if (!point) return false
+        const zoom = Math.min(8, maxZoom)
+        const projected = map.project(point, zoom)
+        const center = map.unproject(projected.add([padRight / 2, padBottom / 2]), zoom)
+        map.flyTo(center, zoom, { duration: 0.75 })
+        return true
+      }
+      const paddingBottomRight: [number, number] = [
+        Math.min(padRight, Math.max(24, size.x / 3)),
+        Math.min(padBottom, Math.max(24, size.y / 3)),
+      ]
+      map.flyToBounds(L.latLngBounds(points), {
+        paddingTopLeft: [56, 64],
+        paddingBottomRight,
+        maxZoom,
+        duration: 0.8,
+      })
+      return true
     }
-    if (camera.points.length === 0) return
-    const padRight = camera.padRight ?? 56
-    const padBottom = camera.padBottom ?? 56
-    const maxZoom = camera.maxZoom ?? (camera.points.length <= 4 ? 8 : 5)
-    if (camera.points.length === 1) {
-      const point = camera.points[0]
-      if (!point) return
-      const zoom = Math.min(8, maxZoom)
-      const projected = map.project(point, zoom)
-      const center = map.unproject(projected.add([padRight / 2, padBottom / 2]), zoom)
-      map.flyTo(center, zoom, { duration: 0.75 })
-      return
+
+    if (!move()) {
+      const timer = window.setTimeout(() => {
+        map.invalidateSize({ pan: false })
+        move()
+      }, 80)
+      return () => {
+        cancelled = true
+        window.clearTimeout(timer)
+      }
     }
-    map.flyToBounds(L.latLngBounds(camera.points), {
-      paddingTopLeft: [56, 64],
-      paddingBottomRight: [padRight, padBottom],
-      maxZoom,
-      duration: 0.8,
-    })
+    return () => {
+      cancelled = true
+    }
   }, [camera, key, map])
   return null
 }
