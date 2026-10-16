@@ -1,9 +1,20 @@
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, PhotoRef, Stop, Trip } from "@/lib/types"
 
-const TRIP_KEY = "travel-footprints-v1"
+const LEGACY_TRIP_KEY = "travel-footprints-v1"
+const BOOKS_KEY = "travel-footprints-books"
 const DB_NAME = "travel-footprints"
 const STORE = "photos"
+
+export type FootprintBook = {
+  id: string
+  name: string
+}
+
+type BookStore = {
+  activeId: string
+  books: FootprintBook[]
+}
 
 export type TripSnapshot = {
   trips: Trip[]
@@ -11,28 +22,98 @@ export type TripSnapshot = {
 }
 
 const serverSnapshot: TripSnapshot = { trips: [], ready: false }
+const emptyBooks: BookStore = { activeId: "", books: [] }
 const listeners = new Set<() => void>()
+const bookListeners = new Set<() => void>()
+let cachedKey = ""
 let cachedRaw: string | null = null
 let cachedSnapshot: TripSnapshot = { trips: [], ready: true }
+let bookCacheRaw: string | null = null
+let bookCache: BookStore = emptyBooks
 
 function emitTrips() {
   listeners.forEach((listener) => listener())
 }
 
+function emitBooks() {
+  bookListeners.forEach((listener) => listener())
+}
+
+function invalidateStores() {
+  cachedKey = ""
+  cachedRaw = null
+  bookCacheRaw = null
+  emitBooks()
+  emitTrips()
+}
+
+function tripStorageKey(bookId: string) {
+  return `${LEGACY_TRIP_KEY}:${bookId}`
+}
+
+function currentTripKey() {
+  const store = readBookStore()
+  if (!store) return LEGACY_TRIP_KEY
+  return tripStorageKey(store.activeId)
+}
+
+function readBookStore(): BookStore | null {
+  try {
+    const raw = localStorage.getItem(BOOKS_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<BookStore>
+    if (!Array.isArray(parsed.books)) return null
+    const books = parsed.books.filter(
+      (book): book is FootprintBook =>
+        !!book && typeof book.id === "string" && typeof book.name === "string" && book.name.trim().length > 0,
+    )
+    if (books.length === 0) return null
+    const activeId = books.some((book) => book.id === parsed.activeId) ? parsed.activeId ?? books[0].id : books[0].id
+    return { activeId, books }
+  } catch {
+    return null
+  }
+}
+
+export function ensureBooks() {
+  if (typeof localStorage === "undefined") return
+  if (readBookStore()) return
+  const id = crypto.randomUUID()
+  const legacy = localStorage.getItem(LEGACY_TRIP_KEY)
+  const store: BookStore = { activeId: id, books: [{ id, name: "我的足跡" }] }
+  localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
+  localStorage.setItem(tripStorageKey(id), legacy ?? "[]")
+  if (legacy !== null) localStorage.removeItem(LEGACY_TRIP_KEY)
+  invalidateStores()
+}
+
 export function subscribeTrips(listener: () => void) {
+  ensureBooks()
+  cachedKey = ""
+  cachedRaw = null
   listeners.add(listener)
-  return () => listeners.delete(listener)
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === BOOKS_KEY || event.key?.startsWith(LEGACY_TRIP_KEY)) listener()
+  }
+  window.addEventListener("storage", onStorage)
+  return () => {
+    listeners.delete(listener)
+    window.removeEventListener("storage", onStorage)
+  }
 }
 
 export function getTripSnapshot(): TripSnapshot {
   try {
-    const raw = localStorage.getItem(TRIP_KEY) ?? "[]"
-    if (raw === cachedRaw) return cachedSnapshot
+    const key = currentTripKey()
+    const raw = localStorage.getItem(key) ?? "[]"
+    if (key === cachedKey && raw === cachedRaw) return cachedSnapshot
+    cachedKey = key
     cachedRaw = raw
     cachedSnapshot = { trips: parseTrips(raw), ready: true }
     return cachedSnapshot
   } catch {
     if (cachedRaw === "__error__") return cachedSnapshot
+    cachedKey = ""
     cachedRaw = "__error__"
     cachedSnapshot = { trips: [], ready: true }
     return cachedSnapshot
@@ -44,11 +125,79 @@ export function getServerTripSnapshot() {
 }
 
 export function writeTrips(trips: Trip[]) {
+  const key = currentTripKey()
   const raw = JSON.stringify(trips)
-  localStorage.setItem(TRIP_KEY, raw)
+  localStorage.setItem(key, raw)
+  cachedKey = key
   cachedRaw = raw
   cachedSnapshot = { trips, ready: true }
   emitTrips()
+}
+
+export function subscribeBooks(listener: () => void) {
+  ensureBooks()
+  bookCacheRaw = null
+  bookListeners.add(listener)
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === BOOKS_KEY) listener()
+  }
+  window.addEventListener("storage", onStorage)
+  queueMicrotask(listener)
+  return () => {
+    bookListeners.delete(listener)
+    window.removeEventListener("storage", onStorage)
+  }
+}
+
+export function getBookSnapshot() {
+  try {
+    const raw = localStorage.getItem(BOOKS_KEY) ?? ""
+    if (raw === bookCacheRaw) return bookCache
+    bookCacheRaw = raw
+    bookCache = readBookStore() ?? emptyBooks
+    return bookCache
+  } catch {
+    return emptyBooks
+  }
+}
+
+export function getServerBookSnapshot() {
+  return emptyBooks
+}
+
+export function createBook(name: string) {
+  ensureBooks()
+  const store = readBookStore()
+  const trimmed = name.trim().slice(0, 24)
+  if (!store || !trimmed) return null
+  const book = { id: crypto.randomUUID(), name: trimmed }
+  store.books.push(book)
+  store.activeId = book.id
+  localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
+  localStorage.setItem(tripStorageKey(book.id), "[]")
+  invalidateStores()
+  return book
+}
+
+export function switchBook(id: string) {
+  const store = readBookStore()
+  if (!store || !store.books.some((book) => book.id === id)) return
+  store.activeId = id
+  localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
+  invalidateStores()
+}
+
+export function removeBook(id: string) {
+  const store = readBookStore()
+  if (!store || store.books.length < 2) return []
+  const removedTrips = parseTrips(localStorage.getItem(tripStorageKey(id)) ?? "[]")
+  store.books = store.books.filter((book) => book.id !== id)
+  if (store.books.length === 0) return []
+  if (store.activeId === id) store.activeId = store.books[0]?.id ?? ""
+  localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
+  localStorage.removeItem(tripStorageKey(id))
+  invalidateStores()
+  return removedTrips
 }
 
 export function updateTrips(updater: (current: Trip[]) => Trip[]) {

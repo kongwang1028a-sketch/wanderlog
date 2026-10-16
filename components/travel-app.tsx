@@ -2,9 +2,10 @@
 
 import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { Download, Flag, Map as MapIcon, Plus, Upload } from "lucide-react"
+import { Download, Flag, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -28,15 +29,22 @@ import {
   visitedCountryIds,
 } from "@/lib/geo"
 import {
+  createBook,
   deletePhotoBlob,
+  getBookSnapshot,
   getPhotoBlob,
+  getServerBookSnapshot,
   getServerTripSnapshot,
   getTripSnapshot,
   importBundle,
   isTrip,
+  removeBook,
   savePhotoBlob,
+  subscribeBooks,
   subscribeTrips,
+  switchBook,
   updateTrips,
+  type FootprintBook,
 } from "@/lib/storage"
 import type { ExportBundle, Stop, Trip } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -75,7 +83,10 @@ function useIsDesktop() {
 
 export function TravelApp() {
   const snapshot = useSyncExternalStore(subscribeTrips, getTripSnapshot, getServerTripSnapshot)
+  const bookStore = useSyncExternalStore(subscribeBooks, getBookSnapshot, getServerBookSnapshot)
   const trips = snapshot.trips
+  const activeBook = bookStore.books.find((book) => book.id === bookStore.activeId) ?? bookStore.books[0]
+  const bookName = activeBook?.name ?? "我的足跡"
   const ready = snapshot.ready
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null)
   const [focusStopId, setFocusStopId] = useState<string | null>(null)
@@ -87,6 +98,8 @@ export function TravelApp() {
   const [query, setQuery] = useState("")
   const [toast, setToast] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [bookNameDraft, setBookNameDraft] = useState("")
   const [camera, setCamera] = useState<Camera>({ kind: "idle" })
   const desktop = useIsDesktop()
   const toastTimer = useRef<number | null>(null)
@@ -108,6 +121,62 @@ export function TravelApp() {
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [editor])
+
+  function resetView() {
+    setSelectedTripId(null)
+    setFocusStopId(null)
+    setSelectedPinKey(null)
+    setEditor(null)
+    setPendingPick(null)
+    setYear("all")
+    setQuery("")
+    setCamera({ kind: "idle" })
+    setMobileView("map")
+  }
+
+  function openBook(id: string) {
+    switchBook(id)
+    resetView()
+  }
+
+  function addBook() {
+    const created = createBook(bookNameDraft)
+    if (!created) return
+    setBookNameDraft("")
+    resetView()
+    notify(`已換成「${created.name}」，這本是空白的`)
+  }
+
+  async function deleteBook(id: string) {
+    const removed = removeBook(id)
+    for (const trip of removed) {
+      for (const photo of trip.photos) {
+        if (photo.kind === "upload") await deletePhotoBlob(photo.id)
+      }
+    }
+    resetView()
+  }
+
+  function askRemoveBook(book: FootprintBook) {
+    setShareOpen(false)
+    setConfirm({
+      title: `刪除「${book.name}」的紀錄？`,
+      body: "這個足跡本裡的旅程會從這台裝置移除。其他足跡本不受影響。",
+      confirmLabel: "刪除",
+      action: () => {
+        void deleteBook(book.id)
+      },
+    })
+  }
+
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.origin)
+      notify("已複製網址")
+    } catch {
+      notify("無法複製，請手動選取網址")
+    }
+  }
 
   function notify(message: string) {
     setToast(message)
@@ -385,9 +454,16 @@ export function TravelApp() {
           </div>
           <div className="min-w-0">
             <h1 className="font-display text-xl leading-none">旅遊足跡</h1>
-            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">把每一次出發留在地圖上</p>
+            <p className="mt-1 max-w-[9rem] truncate text-xs text-muted-foreground sm:max-w-none">{bookName}</p>
           </div>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <Button variant="outline" size="icon" className="sm:hidden" aria-label="分享給朋友" onClick={() => setShareOpen(true)}>
+              <Share2 />
+            </Button>
+            <Button variant="outline" className="hidden sm:inline-flex" onClick={() => setShareOpen(true)}>
+              <Share2 />
+              分享
+            </Button>
             <Button variant="outline" size="icon" className="sm:hidden" aria-label="匯入" onClick={() => importRef.current?.click()}>
               <Upload />
             </Button>
@@ -663,6 +739,73 @@ export function TravelApp() {
         </div>
       )}
 
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>分享給朋友</DialogTitle>
+            <DialogDescription>
+              朋友用自己的手機或電腦打開，會看到空白地圖。旅程只留在各自的瀏覽器，不會混在一起，也不會上傳。
+            </DialogDescription>
+          </DialogHeader>
+          {shareOpen && <ShareLinkNotice />}
+          <div className="space-y-2">
+            <p className="font-medium">這台裝置上的足跡本</p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              共用同一台電腦或手機時，各自建立一本。切換之後看到的旅程就不同。
+            </p>
+            <ul className="max-h-40 space-y-1 overflow-y-auto">
+              {bookStore.books.map((book) => {
+                const active = book.id === activeBook?.id
+                return (
+                  <li key={book.id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className={cn(
+                        "min-w-0 flex-1 rounded-xl px-3 py-2 text-left",
+                        active ? "bg-[#e7f3f1] text-sea" : "hover:bg-secondary",
+                      )}
+                      onClick={() => openBook(book.id)}
+                    >
+                      <span className="block truncate font-medium">{book.name}</span>
+                      <span className="text-xs text-muted-foreground">{active ? "使用中" : "切換到這本"}</span>
+                    </button>
+                    {bookStore.books.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => askRemoveBook(book)}>
+                        刪除
+                      </Button>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+            <div className="flex gap-2">
+              <Input
+                value={bookNameDraft}
+                maxLength={24}
+                placeholder="朋友的名字，例如小明"
+                aria-label="新的足跡本名稱"
+                className="h-10 bg-card"
+                onChange={(event) => setBookNameDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault()
+                    addBook()
+                  }
+                }}
+              />
+              <Button type="button" variant="secondary" onClick={addBook} disabled={!bookNameDraft.trim()}>
+                建立
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => void copyShareLink()}>
+              複製網址
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={confirm !== null} onOpenChange={(open) => { if (!open) setConfirm(null) }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -685,6 +828,21 @@ export function TravelApp() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function ShareLinkNotice() {
+  const origin = window.location.origin
+  const localOnly = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  return (
+    <div className="space-y-2">
+      <p className="break-all rounded-xl bg-secondary px-3 py-2 text-xs">{origin}</p>
+      {localOnly && (
+        <p className="text-xs leading-5 text-muted-foreground">
+          這個網址現在只在這台電腦上。朋友要從自己的手機進來，需要先把網站放到網路上。同一台裝置可以直接用下面的足跡本把紀錄分開。
+        </p>
+      )}
     </div>
   )
 }
