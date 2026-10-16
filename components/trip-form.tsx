@@ -348,12 +348,12 @@ export function TripForm({
             <Label htmlFor="trip-outline">貼上行程大綱</Label>
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            整段貼上即可。會讀出日期與城市，填進下面的名稱、日期與停留點。
+            整段貼上即可。簡短列表，或是含每天、航班、住宿的完整行程表，都會讀出日期與城市。
           </p>
           <Textarea
             id="trip-outline"
             value={outline}
-            maxLength={8000}
+            maxLength={20000}
             placeholder={OUTLINE_PLACEHOLDER}
             className="min-h-36 bg-card"
             onChange={(event) => setOutline(event.target.value)}

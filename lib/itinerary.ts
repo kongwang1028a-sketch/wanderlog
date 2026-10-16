@@ -16,7 +16,7 @@ export type ParsedItinerary = {
 }
 
 const TITLE_HINT = /自由行|之旅|旅行|行程|旅遊|度假|出差/
-const RETURN_HINT = /回國|返國|返台|返臺|回台|回臺|回家|回程|返回/
+const HOME_HINT = /回國|返國|返台|返臺|回台|回臺|回家|回程/
 const NOTE_NOISE = /^(?:回國|返國|返台|返臺|回台|回臺|回家|回程|返回|出發|抵達|到達|轉機|回)$/
 const JOINERS = new Set(["and", "to", "via", "from", "then", "the", "of", "in"])
 const AMBIGUOUS_LATIN = new Set(["nice"])
@@ -47,6 +47,8 @@ const AIRPORTS: { text: string; cityId: string }[] = [
   { text: "桃機", cityId: "tw-taipei" },
   { text: "中部國際機場", cityId: "jp-nagoya" },
   { text: "那霸機場", cityId: "jp-naha" },
+  { text: "福岡機場", cityId: "jp-fukuoka" },
+  { text: "福岡國際機場", cityId: "jp-fukuoka" },
 ]
 
 type PlaceKind = "city" | "spot" | "airport"
@@ -79,6 +81,7 @@ type Draft = {
   note?: string
   dayIndex?: number
   fromReturn: boolean
+  gateway?: boolean
 }
 
 const needles = buildNeedles()
@@ -88,8 +91,7 @@ export function parseItinerary(raw: string, today = new Date()): ParsedItinerary
   const lines = raw
     .replace(/\r\n?/g, "\n")
     .split("\n")
-    .map((line) => stripBullet(normalize(line)))
-    .map((line) => line.trim())
+    .map((line) => stripDecor(stripBullet(normalize(line))).trim())
 
   const initialYear = firstExplicitYear(lines.join("\n")) ?? today.getFullYear()
   const titleHit = pickTitle(lines)
@@ -119,55 +121,61 @@ export function parseItinerary(raw: string, today = new Date()): ParsedItinerary
 
   const parseStops = (line: string, datesOnly: boolean) => {
     const dates = consumeDates(line)
+    const ranged = dates.find((hit) => hit.start !== hit.end)
+    if (ranged && !headerStart) headerStart = ranged.start
+    if (dates.length === 1 && dates[0]?.start !== dates[0]?.end) carry = undefined
+    else if (dates.length > 0 && dates.every((hit) => hit.start === hit.end)) carry = dates[dates.length - 1]?.start
+
     const dayIndex = findDay(line)
     const pureDate = dates.length > 0 && residue(line, dates).length === 0
-    const isReturn = RETURN_HINT.test(line)
+    const goingHome = HOME_HINT.test(line)
 
     if (pureDate) {
       const hit = dates[0]
-      if (hit && hit.start !== hit.end) carry = undefined
-      else carry = hit?.start
       if (!headerStart && hit) headerStart = hit.start
       return
     }
 
     if (datesOnly) return
+    if (!isItineraryLine(line, dates, dayIndex)) return
 
     const hits = dates.length > 0 ? dates : [undefined]
     const occupied = Array.from({ length: line.length }, () => false)
     for (const hit of dates) mark(occupied, hit.index, hit.length)
     const placeOnly = isPlaceOnly(stripDateText(line, dates))
     const places = findPlaces(line, occupied, { hasDate: dates.length > 0 || dayIndex !== undefined, placeOnly })
-    const noted = blankDates(line, dates)
+    if (isDayTheme(line, dates, places)) return
 
+    const noted = blankDates(line, dates)
     let produced = 0
     hits.forEach((hit, hitIndex) => {
       const from = hit && hitIndex > 0 ? hit.index : 0
       const to = dates[hitIndex + 1]?.index ?? line.length
       const inSegment = places.filter((place) => place.index >= from && place.index < to)
-      const chosen = choosePlaces(inSegment, isReturn)
+      const chosen = choosePlaces(inSegment, goingHome)
       if (chosen.length === 0) return
       const dayDate = !hit && dayIndex && headerStart ? addDays(headerStart, dayIndex - 1) : undefined
       const date = hit?.start ?? dayDate ?? carry
       for (const place of chosen) {
-        if (isReturn && drafts.some((draft) => draft.city.id === place.city.id)) continue
-        const note = noteFor(noted, from, to, hit, chosen, place)
+        if (goingHome && drafts.some((draft) => draft.city.id === place.city.id)) continue
+        const nextPlace = chosen.find((item) => item.index > place.index)
+        const source = line.slice(place.index, nextPlace ? nextPlace.index : to)
+        const note = tightenNote(noteFor(noted, from, to, hit, chosen, place), source)
         drafts.push({
           city: place.city,
           date,
           note,
           dayIndex: hit || dayDate ? undefined : dayIndex,
-          fromReturn: isReturn && place.city.code === "TW",
+          fromReturn: goingHome && place.city.code === "TW",
+          gateway: place.kind === "airport" && place.city.code === "TW",
         })
         produced += 1
       }
-      if (hit) carry = hit.start
-      else if (dayIndex && headerStart) carry = addDays(headerStart, dayIndex - 1)
     })
 
     if (produced > 0) return
-    if (isReturn && dates.length > 0) return
-    if (line.trim()) unmatched.push(line.trim())
+    if (goingHome && dates.length > 0) return
+    if (worthReporting(line, dates)) unmatched.push(line.trim())
   }
 
   lines.forEach((line, index) => {
@@ -180,8 +188,8 @@ export function parseItinerary(raw: string, today = new Date()): ParsedItinerary
     parseStops(lines[titleHit.index] ?? "", false)
   }
 
-  const hasForeign = drafts.some((draft) => draft.city.code !== "TW" && !draft.fromReturn)
-  const visible = drafts.filter((draft) => !(draft.fromReturn && draft.city.code === "TW" && hasForeign))
+  const hasForeign = drafts.some((draft) => draft.city.code !== "TW")
+  const visible = drafts.filter((draft) => !(draft.city.code === "TW" && hasForeign && (draft.gateway || draft.fromReturn)))
   const merged = mergeStops(visible)
 
   let startDate = bounds.reduce((min, iso) => (min && min < iso ? min : iso), "")
@@ -276,7 +284,8 @@ function mergeStops(drafts: Draft[]) {
 function joinNotes(left?: string, right?: string) {
   const parts = [left, right].flatMap((item) => (item ? item.split("、") : []))
   const unique = [...new Set(parts.map((item) => item.trim()).filter(Boolean))]
-  return unique.length > 0 ? unique.join("、") : undefined
+  const pruned = unique.filter((part) => !unique.some((other) => other !== part && other.includes(part)))
+  return pruned.length > 0 ? pruned.join("、").slice(0, 120) : undefined
 }
 
 function pickTitle(lines: string[]) {
@@ -288,7 +297,7 @@ function pickTitle(lines: string[]) {
   const plain = lines.findIndex((line) => {
     if (!line || line.length > 24) return false
     if (findDates(line, () => ({ year: 2000, lastMonth: 0 }), () => undefined).length > 0) return false
-    if (RETURN_HINT.test(line)) return false
+    if (HOME_HINT.test(line)) return false
     const occupied = Array.from({ length: line.length }, () => false)
     return findPlaces(line, occupied, { hasDate: false, placeOnly: true }).length === 0
   })
@@ -299,8 +308,8 @@ function pickTitle(lines: string[]) {
 function cleanTitle(line: string) {
   const dates = findDates(line, () => ({ year: 2000, lastMonth: 0 }), () => undefined)
   return stripDateText(line, dates)
-    .replace(TITLE_HINT, (match) => match)
     .replace(/[()（）[\]【】]/g, " ")
+    .replace(/行程總整理|總整理|詳細行程|行程表/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 60)
@@ -339,7 +348,8 @@ function findDates(
 }
 
 function readRange(rest: string, startMonth: number) {
-  const match = rest.match(/^\s*[-至到]\s*(?:(\d{4})\s*[年/.])?\s*(?:(\d{1,2})\s*[月/.]\s*)?(\d{1,2})(?:\s*[日號])?/)
+  const weekday = "(?:\\([^)]{0,12}\\)|星期[一二三四五六日天]|週[一二三四五六日天]|禮拜[一二三四五六日天])"
+  const match = rest.match(new RegExp(`^(?:\\s*${weekday})?\\s*[-至到]\\s*(?:(\\d{4})\\s*[年/.])?\\s*(?:(\\d{1,2})\\s*[月/.]\\s*)?(\\d{1,2})(?:\\s*[日號])?(?:\\s*${weekday})?`))
   if (!match) return null
   const after = rest.slice(match[0].length)
   if (/^[人晚天時分個泊夜點元張]/.test(after)) return null
@@ -380,11 +390,90 @@ function addDays(iso: string, days: number) {
 }
 
 function findDay(line: string) {
-  const match = line.match(/第\s*(\d{1,2})\s*[天日]/) ?? line.match(/\bDay\s*(\d{1,2})\b/i) ?? line.match(/\bD(\d{1,2})\b/)
+  const match = line.match(/^(?:第\s*(\d{1,2})\s*[天日]|Day\s*(\d{1,2})\b|D(\d{1,2})\b)/i)
   if (!match) return undefined
-  const day = Number(match[1])
+  const day = Number(match[1] ?? match[2] ?? match[3])
   if (day < 1 || day > 60) return undefined
   return day
+}
+
+const TRAILING_REJECT: Record<string, string> = {
+  高山: "症",
+  日光: "浴",
+  天神: "橋社祭宮",
+  鹿兒島: "本",
+  長崎: "本",
+}
+
+const REPORT_NOISE = /住宿資訊|住宿|航班|去程|回程|行前必知|重點整理|每日詳細|交通方式|交通建議|自由活動|飯店休息|午餐|晚餐|早餐|購物|採買|寄放|行李|報到|登機|離開|準時|移動|返回|前往|抵達|到達|出發|轉車|搭車|機場|車站|飯店|酒店|休息|集合|解散|時間|行程|項目|建議|處理事項|備註|訂位代碼|航廈|小時|分鐘/g
+
+function rejectedTrail(line: string, text: string, index: number) {
+  const banned = TRAILING_REJECT[text]
+  if (!banned) return false
+  return banned.includes(line[index + text.length] ?? "")
+}
+
+function isItineraryLine(line: string, dates: DateHit[], dayIndex?: number) {
+  const head = line.trim()
+  if (dates.length > 0 || dayIndex) return true
+  if (/^(?:第\s*\d{1,2}\s*[天日]|Day\s*\d{1,2}\b|D\d{1,2}\b|\d{1,2}:\d{2}\b)/i.test(head)) return true
+  if (/[→⇒]|->/.test(head)) return true
+  if (isPlaceOnly(head)) return true
+  return head.length > 0 && head.length <= 40
+}
+
+function isDayTheme(line: string, dates: DateHit[], places: PlaceHit[]) {
+  if (dates.length === 0 || !findDay(line)) return false
+  if (!/^(?:第\s*\d{1,2}\s*[天日]|Day\s*\d{1,2}\b|D\d{1,2}\b)/i.test(line.trim())) return false
+  let text = stripDateText(line, dates).replace(/第\s*\d{1,2}\s*[天日]|Day\s*\d{1,2}|D\d{1,2}/gi, " ")
+  for (const place of [...places].sort((a, b) => b.length - a.length)) text = text.replace(place.slice, " ")
+  text = text.replace(/[^\p{Script=Han}A-Za-z]/gu, "")
+  return text.length >= 4
+}
+
+function tightenNote(note: string | undefined, source: string) {
+  const spots: string[] = []
+  for (const needle of needles) {
+    if (needle.kind !== "spot") continue
+    if (source.includes(needle.text) && !spots.includes(needle.text)) spots.push(needle.text)
+  }
+  const parts = (note ?? "").split("、").map((part) => part.trim()).filter(usefulNotePart)
+  if (spots.length > 0) {
+    const extras = parts.filter((part) => part.length <= 8 && !spots.some((spot) => spot.includes(part) || part.includes(spot)))
+    const unique = [...new Set([...spots, ...extras])]
+    return unique.join("、").slice(0, 120)
+  }
+  const unique = [...new Set(parts)]
+  if (unique.length === 0) return undefined
+  return unique.join("、").slice(0, 120)
+}
+
+function usefulNotePart(part: string) {
+  if (part.length < 3 || part.length > 16 || /^\d/.test(part) || /^[-:：]/.test(part)) return false
+  if (!/[\p{Script=Han}]{2,}/u.test(part)) return false
+  if (/[至線站約號的與或後在從往等]/.test(part)) return false
+  if (/列車|分鐘|航廈|接駁|巴士|計程車|地下鐵|寄放|行李|搭乘|返回|前往|抵達|轉乘|原路|用餐|購物|午餐|晚餐|早餐|自由活動|登機|報到|採買|小時|特急|音速|活動|參觀|入住|換飯|地鐵|電車/.test(part)) return false
+  return true
+}
+
+function isMeta(line: string, dates: DateHit[]) {
+  const rest = residue(line, dates)
+  if (!rest) return true
+  if (/^(?:旅行日期|出發日期|回程日期|行程日期|住宿資訊|航班|去程|回程)+$/.test(rest)) return true
+  if (/^[\d小時分鐘]+$/.test(rest)) return true
+  return false
+}
+
+function worthReporting(line: string, dates: DateHit[]) {
+  if (isMeta(line, dates)) return false
+  let text = stripDateText(line, dates)
+  text = text.replace(/\d{1,2}:\d{2}/g, " ")
+  text = text.replace(/\b[A-Z0-9]{2,}\b/g, " ")
+  text = text.replace(/第\s*\d{1,2}\s*[天日]|Day\s*\d{1,2}|D\d{1,2}/gi, " ")
+  text = text.replace(REPORT_NOISE, " ")
+  const han = text.match(/[\p{Script=Han}]{2,}/gu) ?? []
+  const latin = text.match(/\b[A-Z][a-z]{2,}\b/g) ?? []
+  return han.length > 0 || latin.length > 0
 }
 
 function findPlaces(line: string, occupied: boolean[], context: { hasDate: boolean; placeOnly: boolean }) {
@@ -404,8 +493,10 @@ function findPlaces(line: string, occupied: boolean[], context: { hasDate: boole
     while (from < line.length) {
       const index = line.indexOf(needle.text, from)
       if (index < 0) break
-      candidates.push({ index, length: needle.text.length, city: needle.city, kind: needle.kind, slice: needle.text })
-      from = index + needle.text.length
+      if (!rejectedTrail(line, needle.text, index)) {
+        candidates.push({ index, length: needle.text.length, city: needle.city, kind: needle.kind, slice: needle.text })
+      }
+      from = index + Math.max(needle.text.length, 1)
     }
   }
   candidates.sort((a, b) => b.length - a.length || kindRank(a.kind) - kindRank(b.kind) || a.index - b.index)
@@ -477,7 +568,7 @@ function cleanNote(text: string) {
 }
 
 function firstExplicitYear(text: string) {
-  const match = text.match(/(\d{4})\s*[年/.]\s*\d{1,2}\s*[月/.]\s*\d{1,2}/)
+  const match = text.match(/(\d{4})\s*[年/.]\s*\d{1,2}\s*[月/.]\s*\d{1,2}/) ?? text.match(/(\d{4})\s*年\s*\d{1,2}\s*月/)
   if (!match) return undefined
   const year = Number(match[1])
   if (year < 1980 || year > 2100) return undefined
@@ -492,7 +583,12 @@ function normalize(text: string) {
     .replace(/[－–—~～〜]/g, "-")
     .replace(/（/g, "(")
     .replace(/）/g, ")")
+    .replace(/：/g, ":")
     .replace(/\u3000/g, " ")
+}
+
+function stripDecor(line: string) {
+  return line.replace(/^[^\p{L}\p{N}]+/u, "")
 }
 
 function stripBullet(line: string) {

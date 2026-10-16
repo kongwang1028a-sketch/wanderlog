@@ -60,6 +60,7 @@ const ISO_NUMERIC: Record<string, number> = {
   TW: 158,
   US: 840,
   VN: 704,
+  MV: 462,
   ZA: 710,
 }
 

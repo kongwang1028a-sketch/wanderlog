@@ -142,12 +142,109 @@ check("中間插入後再回到同一城市", () => {
 check("沒有對上的城市", () => {
   const parsed = parseItinerary(
     `11/2 大阪
-11/8 神戶`,
+11/8 雙子鎮`,
     today,
   )
-  assert.deepEqual(names("11/2 大阪\n11/8 神戶"), ["大阪"])
-  assert.deepEqual(parsed.unmatched, ["11/8 神戶"])
+  assert.deepEqual(names("11/2 大阪\n11/8 雙子鎮"), ["大阪"])
+  assert.deepEqual(parsed.unmatched, ["11/8 雙子鎮"])
   assert.match(parsed.summary, /1 行沒有對上城市/)
+})
+
+check("神戶、朱諾、黃刀鎮", () => {
+  const parsed = parseItinerary(
+    `極光之旅
+10/3 朱諾
+10/5 黃刀鎮
+10/8 神戶`,
+    today,
+  )
+  assert.deepEqual(
+    parsed.stops.map((stop) => stop.city.zh),
+    ["朱諾", "黃刀鎮", "神戶"],
+  )
+  assert.equal(parsed.stops[1]?.city.en, "Yellowknife")
+  assert.deepEqual(names("10/3 Juneau\n10/5 Yellowknife\n10/6 黃刀"), ["朱諾", "黃刀鎮"])
+})
+
+check("星期夾在日期區間", () => {
+  const parsed = parseItinerary("旅行日期：10月23日（四）～10月26日（日）\n10月24日 福岡", new Date(2025, 0, 1))
+  assert.equal(parsed.startDate, "2025-10-23")
+  assert.equal(parsed.endDate, "2025-10-26")
+  assert.equal(parsed.stops[0]?.city.zh, "福岡")
+  assert.equal(parsed.stops[0]?.date, "2025-10-24")
+})
+
+check("福岡完整行程表", () => {
+  const parsed = parseItinerary(
+    `🏯 2025年10月 福岡 4天3夜 行程總整理
+旅行日期： 10月23日（四）～10月26日（日）
+
+🛏️住宿資訊：
+Day 1-2： 博多中央JR九州Blossom酒店 (近博多站)
+Day 3： 博多東急REI飯店 (近博多站/天神)
+
+✈️ 航班
+去程
+BR106　[訂位代碼: ECMGRS]
+2025年10月23日 (2小時10分鐘)
+08:10 桃園機場(TPE) - 2航廈
+11:20 福岡機場(FUK) - I航廈
+回程
+JX841　[訂位代碼: ECVJ9J]
+2025年10月26日 (2小時40分鐘)
+19:10 福岡機場(FUK) - 國際航廈
+20:50 桃園機場(TPE) - 1航廈
+
+💡 行前必知重點整理
+行李寄放 建議 Day 1 抵達後直接寄放飯店（博多中央JR九州Blossom），輕裝前往北九州。
+
+📅 每日詳細行程與交通建議
+☀️ Day 1：10月23日（四） 北九州動漫與百億夜景
+11:00 抵達福岡機場 國際線轉免費接駁巴士至國內線，轉地下鐵空港線至博多。
+13:00 飯店寄放行李/午餐 博多中央JR九州Blossom酒店寄放行李後，在博多站快速用餐。
+14:00 博多 → 小倉 JR 特急列車（如：特急音速 Sonic）至 JR 小倉站（約 40-50 分鐘）。
+15:00 AruAruCity 購物 JR 小倉站北口旁，動漫主題購物。
+17:00 小倉 → 皿倉山 JR 鹿兒島本線至 JR 八幡站（約 15 分鐘）。
+18:00 皿倉山纜車 搭乘纜車上山，欣賞日落與璀璨夜景。
+20:30 皿倉山 → 博多 原路搭乘 JR 返回 JR 博多站。
+
+🐟 Day 2：10月24日（五） 海洋探索之旅
+09:00 博多 → 海之中道 JR 鹿兒島本線至香椎站，轉JR 香椎線至 JR 海之中道站。
+10:00 海之中道海洋世界 全日參觀水族館，欣賞精彩的海豚表演。
+17:00 返回博多 原路搭乘 JR 回 JR 博多站。
+
+⛩️ Day 3：10月25日（六） 太宰府、竈門神社與 COCO'S 晚餐
+09:00 博多 → 太宰府 西鐵直行巴士直達太宰府站。
+10:00 太宰府天滿宮 參拜與表參道購物。
+13:30 寶滿宮 竈門神社 太宰府循環巴士至終點站。
+15:30 太宰府 → 博多 搭乘旅人號回 JR 博多站。
+18:30 吉伊卡哇 x COCO'S 晚餐前往COCO'S 博多站南店。
+20:00 博多運河城 參觀寶可夢中心。
+
+🛍️ Day 4：10月26日（日） 購物與返程
+10:00 天神購物 飯店 Check-out後，搭乘地鐵至天神站。
+16:00 前往機場 JR 博多站搭乘地下鐵空港線至福岡機場站。
+19:00 航班離開 準時登機。`,
+    today,
+  )
+  assert.equal(parsed.title, "2025年10月 福岡 4天3夜")
+  assert.equal(parsed.startDate, "2025-10-23")
+  assert.equal(parsed.endDate, "2025-10-26")
+  assert.deepEqual(
+    parsed.stops.map((stop) => stop.city.zh),
+    ["福岡", "北九州", "福岡"],
+  )
+  assert.equal(parsed.stops[0]?.date, "2025-10-23")
+  assert.equal(parsed.stops[1]?.date, "2025-10-23")
+  assert.match(parsed.stops[1]?.note ?? "", /皿倉山/)
+  assert.match(parsed.stops[2]?.note ?? "", /太宰府天滿宮/)
+  assert.equal(parsed.stops.some((stop) => stop.city.zh === "台北" || stop.city.zh === "鹿兒島"), false)
+  assert.deepEqual(parsed.unmatched, [])
+})
+
+check("高山症不是高山", () => {
+  assert.deepEqual(names("11/2 拉薩注意高山症"), [])
+  assert.deepEqual(names("11/2 高山 宮川朝市"), ["高山"])
 })
 
 check("同一行箭頭", () => {
