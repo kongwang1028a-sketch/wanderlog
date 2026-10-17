@@ -9,15 +9,13 @@ import {
   GERMANY_2017_TRIP_ID,
   JAPAN_JUN_2023_TITLE,
   JAPAN_JUN_2023_TRIP_ID,
-  JAPAN_2018_TITLE,
-  JAPAN_2018_TRIP_ID,
   RUSSIA_2018_TITLE,
   RUSSIA_2018_TRIP_ID,
   createGermany2017Trip,
-  createJapan2018Trip,
   createJapanJun2023Trip,
   createRussia2018Trip,
 } from "@/lib/outline-trips"
+import { JAPAN_2018_TITLE, JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
 import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
@@ -36,6 +34,7 @@ const GERMANY_2017_FOCUS_FLAG = "travel-footprints-germany-2017-focused"
 const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
 const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
 const JAPAN_2018_FOCUS_FLAG = "travel-footprints-japan-2018-focused"
+const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -690,18 +689,17 @@ function sameJapan2018Trip(trip: Trip) {
 }
 
 function japan2018TripCurrent(trip: Trip) {
+  const ids = trip.stops.map((stop) => stop.cityId)
   return (
     trip.title === JAPAN_2018_TITLE &&
-    trip.startDate === "2018-01-01" &&
-    trip.endDate === "2018-12-31" &&
-    trip.stops.length === 1 &&
-    trip.stops[0]?.name === "日本" &&
-    trip.stops[0]?.countryCode === "JP" &&
-    trip.stops[0]?.cityId === undefined &&
-    trip.stops[0]?.date === undefined &&
+    trip.startDate === "2018-10-28" &&
+    trip.endDate === "2018-11-02" &&
+    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-kawagoe,jp-tokyo" &&
+    trip.stays.some((stay) => stay.name.includes("Buku Tokyo")) &&
     trip.flights.length === 0 &&
-    trip.stays.length === 0 &&
-    trip.notes.includes("詳細行程還沒找到")
+    trip.notes.includes("沒有航班編號") &&
+    trip.stops.some((stop) => stop.note?.includes("柚屋")) &&
+    trip.stops.some((stop) => stop.note?.includes("品川水族館"))
   )
 }
 
@@ -711,25 +709,31 @@ function ensureJapan2018Trip() {
   const index = existing.findIndex(sameJapan2018Trip)
   let current = index >= 0 ? existing[index] : undefined
   if (!current || !japan2018TripCurrent(current)) {
-    const canInsert = !current && localStorage.getItem(JAPAN_2018_FOCUS_FLAG) !== "1"
+    const canInsert =
+      !current &&
+      localStorage.getItem(JAPAN_2018_FOCUS_FLAG) !== "1" &&
+      localStorage.getItem(JAPAN_2018_TOKYO_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createJapan2018Trip()
-      const merged: Trip = current
-        ? {
-            ...created,
-            id: current.id,
-            photos: current.photos,
-            createdAt: current.createdAt,
-          }
-        : created
-      existing = [merged, ...existing.filter((trip) => !sameJapan2018Trip(trip))]
-      writeTrips(existing)
-      current = merged
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        existing = [merged, ...existing.filter((trip) => !sameJapan2018Trip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
     }
   }
-  if (current && localStorage.getItem(JAPAN_2018_FOCUS_FLAG) !== "1") {
+  if (current && localStorage.getItem(JAPAN_2018_TOKYO_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(JAPAN_2018_FOCUS_FLAG, "1")
+    localStorage.setItem(JAPAN_2018_TOKYO_FOCUS_FLAG, "1")
   }
 }
 

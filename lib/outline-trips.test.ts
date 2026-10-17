@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { createGermany2017Trip, createJapan2018Trip, createJapanJun2023Trip, createRussia2018Trip } from "./outline-trips"
+import { createGermany2017Trip, createJapanJun2023Trip, createRussia2018Trip } from "./outline-trips"
 
 const japan = createJapanJun2023Trip()
 assert.equal(japan.title, "2023年6月 日本")
@@ -42,19 +42,5 @@ assert.equal(russia.stays.length, 0)
 assert.match(russia.notes, /2018/)
 assert.match(russia.notes, /詳細行程還沒找到/)
 assert.doesNotMatch(russia.notes, /莫斯科|聖彼得堡/)
-
-const japan2018 = createJapan2018Trip()
-assert.equal(japan2018.title, "2018年 日本")
-assert.equal(japan2018.startDate, "2018-01-01")
-assert.equal(japan2018.endDate, "2018-12-31")
-assert.equal(japan2018.stops[0]?.name, "日本")
-assert.equal(japan2018.stops[0]?.countryCode, "JP")
-assert.equal(japan2018.stops[0]?.date, undefined)
-assert.equal(japan2018.stops[0]?.cityId, undefined)
-assert.equal(japan2018.flights.length, 0)
-assert.equal(japan2018.stays.length, 0)
-assert.match(japan2018.notes, /2018/)
-assert.match(japan2018.notes, /詳細行程還沒找到/)
-assert.doesNotMatch(japan2018.notes, /東京|大阪|京都/)
 
 console.log("all passed")
