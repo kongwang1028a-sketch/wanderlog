@@ -7,62 +7,12 @@ import {
 } from "@/lib/cities"
 import type { Pin, Stop, Trip } from "@/lib/types"
 
-const ISO_NUMERIC: Record<string, number> = {
-  AE: 784,
-  AR: 32,
-  AT: 40,
-  AU: 36,
-  BE: 56,
-  BR: 76,
-  CA: 124,
-  CH: 756,
-  CL: 152,
-  CN: 156,
-  CZ: 203,
-  DE: 276,
-  DK: 208,
-  EG: 818,
-  ES: 724,
-  FI: 246,
-  FR: 250,
-  GB: 826,
-  GR: 300,
-  HK: 344,
-  HR: 191,
-  HU: 348,
-  ID: 360,
-  IE: 372,
-  IN: 356,
-  IS: 352,
-  IT: 380,
-  JP: 392,
-  KH: 116,
-  KR: 410,
-  LA: 418,
-  LK: 144,
-  MA: 504,
-  MM: 104,
-  MO: 446,
-  MX: 484,
-  MY: 458,
-  NL: 528,
-  NO: 578,
-  NP: 524,
-  NZ: 554,
-  PE: 604,
-  PH: 608,
-  PL: 616,
-  PT: 620,
-  RU: 643,
-  SE: 752,
-  SG: 702,
-  TH: 764,
-  TR: 792,
-  TW: 158,
-  US: 840,
-  VN: 704,
-  MV: 462,
-  ZA: 710,
+const CITY_RADIUS_M = 15_000
+const MIN_RADIUS_PX = 5
+
+export function cityRadiusMeters(lat: number, zoom: number) {
+  const metersPerPixel = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom
+  return Math.max(CITY_RADIUS_M, MIN_RADIUS_PX * metersPerPixel)
 }
 
 export function haversineKm(
@@ -85,12 +35,6 @@ export function flagEmoji(code: string) {
   return code
     .toUpperCase()
     .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
-}
-
-export function countryNumericId(code: string) {
-  const numeric = ISO_NUMERIC[code.toUpperCase()]
-  if (!numeric) return null
-  return String(numeric).padStart(3, "0")
 }
 
 export function placeKey(stop: Pick<Stop, "cityId" | "lat" | "lng">) {
@@ -127,17 +71,6 @@ export function buildPins(trips: Trip[]): Pin[] {
     }
   }
   return [...pins.values()]
-}
-
-export function visitedCountryIds(trips: Trip[]) {
-  const ids = new Set<string>()
-  for (const trip of trips) {
-    for (const stop of trip.stops) {
-      const id = countryNumericId(stop.countryCode)
-      if (id) ids.add(id)
-    }
-  }
-  return ids
 }
 
 export function uniqueCountries(trips: Trip[]) {

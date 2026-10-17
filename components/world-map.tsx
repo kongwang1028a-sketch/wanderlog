@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import {
-  GeoJSON,
+  Circle,
   MapContainer,
   Marker,
   Polyline,
@@ -12,11 +12,8 @@ import {
   useMapEvents,
 } from "react-leaflet"
 import L from "leaflet"
-import type { Feature, FeatureCollection, Geometry } from "geojson"
-import { feature } from "topojson-client"
-import { splitPolygonsAtDateline } from "@/lib/antimeridian"
 import "leaflet/dist/leaflet.css"
-import { flagEmoji } from "@/lib/geo"
+import { cityRadiusMeters, flagEmoji } from "@/lib/geo"
 import type { Pin } from "@/lib/types"
 
 export type Camera =
@@ -52,7 +49,6 @@ type WorldMapProps = {
   pins: Pin[]
   activePinKey?: string | null
   routeStops: RouteStop[]
-  visitedIds: string[]
   pickEnabled: boolean
   camera: Camera
   onPinClick: (key: string) => void
@@ -208,6 +204,36 @@ function TraditionalTiles() {
   return null
 }
 
+function CityDiscs({ pins }: { pins: Pin[] }) {
+  const map = useMap()
+  const [zoom, setZoom] = useState(() => map.getZoom())
+  useMapEvents({
+    zoom() {
+      setZoom(map.getZoom())
+    },
+  })
+  return (
+    <>
+      {pins.map((pin) => (
+        <Circle
+          key={pin.key}
+          center={[pin.lat, pin.lng]}
+          radius={cityRadiusMeters(pin.lat, zoom)}
+          interactive={false}
+          pathOptions={{
+            className: "city-disc",
+            fillColor: "#c4553a",
+            fillOpacity: 0.55,
+            color: "#8c3a28",
+            weight: 1.5,
+            opacity: 0.9,
+          }}
+        />
+      ))}
+    </>
+  )
+}
+
 function ResizeFix() {
   const map = useMap()
   useEffect(() => {
@@ -222,66 +248,17 @@ function ResizeFix() {
   return null
 }
 
-function featureNumericId(item: Feature) {
-  if (item.id === undefined || item.id === null) return ""
-  return String(item.id).padStart(3, "0")
-}
-
 export default function WorldMap({
   pins,
   activePinKey,
   routeStops,
-  visitedIds,
   pickEnabled,
   camera,
   onPinClick,
   onRouteStopClick,
   onPick,
 }: WorldMapProps) {
-  const [countries, setCountries] = useState<FeatureCollection<Geometry> | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/geo/countries-50m.json`)
-      .then((response) => {
-        if (!response.ok) throw new Error("geo")
-        return response.json() as Promise<{ objects: { countries: object } }>
-      })
-      .then((topology) => {
-        if (cancelled) return
-        const collection = feature(
-          topology as never,
-          topology.objects.countries as never,
-        ) as unknown as FeatureCollection<Geometry>
-        setCountries({
-          type: "FeatureCollection",
-          features: collection.features.map((item) => {
-            if (item.geometry.type !== "Polygon" && item.geometry.type !== "MultiPolygon") return item
-            const polygons =
-              item.geometry.type === "Polygon" ? [item.geometry.coordinates] : item.geometry.coordinates
-            const split = splitPolygonsAtDateline(polygons as number[][][][])
-            return {
-              ...item,
-              geometry: { type: "MultiPolygon", coordinates: split },
-            }
-          }),
-        })
-      })
-      .catch(() => {
-        // Flags and routes still work if the country shapes cannot load.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const visited = useMemo(() => new Set(visitedIds), [visitedIds])
-  const visitedGeo = useMemo(() => {
-    if (!countries) return null
-    const features = countries.features.filter((item) => visited.has(featureNumericId(item)))
-    return { type: "FeatureCollection" as const, features }
-  }, [countries, visited])
-
+  const cityPins = pins.filter((pin) => pin.cityId)
   const routePositions = routeStops.map((stop) => [stop.lat, stop.lng] as [number, number])
   const routePinsHidden = (pin: Pin) =>
     routeStops.some(
@@ -304,19 +281,7 @@ export default function WorldMap({
       <ResizeFix />
       <CameraRig camera={camera} />
       <PickLayer enabled={pickEnabled} onPick={onPick} />
-      {visitedGeo && visitedGeo.features.length > 0 && (
-        <GeoJSON
-          key={visitedIds.slice().sort().join(",")}
-          data={visitedGeo}
-          interactive={false}
-          style={() => ({
-            fillColor: "#c4553a",
-            fillOpacity: 0.42,
-            color: "#8c3a28",
-            weight: 1,
-          })}
-        />
-      )}
+      <CityDiscs pins={cityPins} />
       {routePositions.length > 1 && (
         <>
           <Polyline

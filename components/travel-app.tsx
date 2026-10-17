@@ -29,7 +29,6 @@ import {
   stopFromCity,
   uniqueCountries,
   uniquePlaces,
-  visitedCountryIds,
 } from "@/lib/geo"
 import {
   applyPublishedFootprints,
@@ -251,7 +250,6 @@ export function TravelApp() {
   const countryCount = uniqueCountries(filtered).length
   const placeCount = uniquePlaces(filtered)
   const dayCount = totalTravelDays(filtered)
-  const visitedIds = useMemo(() => [...visitedCountryIds(filtered)], [filtered])
 
   const routeStops: RouteStop[] = selectedTrip
     ? selectedTrip.stops.map((stop, index) => ({
@@ -790,7 +788,6 @@ export function TravelApp() {
             pins={pins}
             activePinKey={selectedPinKey}
             routeStops={routeStops}
-            visitedIds={visitedIds}
             pickEnabled={pickEnabled}
             camera={camera}
             onPinClick={(key) => {
@@ -854,10 +851,10 @@ export function TravelApp() {
             <div className="pointer-events-auto absolute bottom-3 left-3 max-w-xs">
               <div className="hidden rounded-2xl bg-card/95 px-3 py-2 text-xs leading-5 shadow-md md:block">
               <p>
-                <span className="mr-1 inline-block size-2.5 rounded-sm bg-terracotta align-middle" />
-                到過的國家
+                <span className="mr-1 inline-block size-2.5 rounded-full bg-terracotta align-middle" />
+                到過的城市
               </p>
-              <p className="mt-1">旗幟是停留過的城市，數字是同一趟旅程的順序。</p>
+              <p className="mt-1">紅色是城市範圍。旗幟標在停留的位置，數字是同一趟旅程的順序。</p>
               </div>
             </div>
             {!editor && trips.length === 0 && (
