@@ -18,6 +18,10 @@ const AURORA_PORTS = [
 ]
 
 let pendingAuroraFocus: string | null = null
+let createdBookThisPage = false
+
+export const PUBLISHED_BOOK_ID = "published-footprints"
+const PUBLISHED_REVISION_KEY = "travel-footprints-published-at"
 
 export function peekAuroraFocus() {
   return pendingAuroraFocus
@@ -100,6 +104,7 @@ function readBookStore(): BookStore | null {
 export function ensureBooks() {
   if (typeof localStorage === "undefined") return
   if (readBookStore()) return
+  createdBookThisPage = true
   const id = crypto.randomUUID()
   const legacy = localStorage.getItem(LEGACY_TRIP_KEY)
   const store: BookStore = { activeId: id, books: [{ id, name: "我的足跡" }] }
@@ -442,6 +447,48 @@ export function isTrip(value: unknown): value is Trip {
     Array.isArray(trip.photos) &&
     trip.photos.every(isPhoto)
   )
+}
+
+export async function applyPublishedFootprints(bundle: ExportBundle) {
+  if (typeof localStorage === "undefined") return { applied: false, switched: false }
+  ensureBooks()
+  const trips = bundle.trips.filter(isTrip).map(normalizeTrip)
+  if (trips.length === 0) return { applied: false, switched: false }
+  const store = readBookStore()
+  if (!store) return { applied: false, switched: false }
+
+  let dirty = false
+  if (!store.books.some((book) => book.id === PUBLISHED_BOOK_ID)) {
+    store.books.unshift({ id: PUBLISHED_BOOK_ID, name: "公開足跡" })
+    dirty = true
+  }
+
+  const revision = bundle.exportedAt || "published"
+  const missing = localStorage.getItem(tripStorageKey(PUBLISHED_BOOK_ID)) === null
+  const changed = localStorage.getItem(PUBLISHED_REVISION_KEY) !== revision
+  if (changed || missing) {
+    for (const photo of bundle.photos) {
+      if (!photo.id || !photo.dataUrl?.startsWith("data:")) continue
+      await savePhotoBlob(photo.id, dataUrlToBlob(photo.dataUrl))
+    }
+    localStorage.setItem(tripStorageKey(PUBLISHED_BOOK_ID), JSON.stringify(trips))
+    localStorage.setItem(PUBLISHED_REVISION_KEY, revision)
+    dirty = true
+  }
+
+  let switched = false
+  if (createdBookThisPage) {
+    store.activeId = PUBLISHED_BOOK_ID
+    createdBookThisPage = false
+    switched = true
+    dirty = true
+  }
+
+  if (dirty) {
+    localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
+    invalidateStores()
+  }
+  return { applied: changed || missing, switched }
 }
 
 export async function importBundle(bundle: ExportBundle) {

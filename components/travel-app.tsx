@@ -32,6 +32,7 @@ import {
   visitedCountryIds,
 } from "@/lib/geo"
 import {
+  applyPublishedFootprints,
   createBook,
   deletePhotoBlob,
   getBookSnapshot,
@@ -118,6 +119,27 @@ export function TravelApp() {
     cameraSeq.current += 1
     return `${prefix}:${cameraSeq.current}`
   }
+
+  useEffect(() => {
+    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+    void fetch(`${base}/data/footprints.json`)
+      .then((response) => {
+        if (!response.ok) return null
+        return response.json() as Promise<Partial<ExportBundle>>
+      })
+      .then(async (parsed) => {
+        if (!parsed || !Array.isArray(parsed.trips)) return
+        await applyPublishedFootprints({
+          version: 1,
+          exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : "published",
+          trips: parsed.trips.filter(isTrip),
+          photos: Array.isArray(parsed.photos) ? parsed.photos : [],
+        })
+      })
+      .catch(() => {
+        // The map still works from this browser when the public file is missing.
+      })
+  }, [])
 
   useEffect(() => {
     if (!toast?.startsWith("已放上")) return
@@ -476,8 +498,7 @@ export function TravelApp() {
     notify("已放入兩段示範旅程，可以改掉或刪除")
   }
 
-  async function exportTrips() {
-    notify("正在打包足跡…")
+  async function bundleTrips(): Promise<ExportBundle> {
     const photos: ExportBundle["photos"] = []
     for (const trip of trips) {
       for (const photo of trip.photos) {
@@ -487,19 +508,33 @@ export function TravelApp() {
         photos.push({ id: photo.id, dataUrl: await blobToDataUrl(blob) })
       }
     }
-    const bundle: ExportBundle = {
+    return {
       version: 1,
       exportedAt: new Date().toISOString(),
       trips,
       photos,
     }
-    const url = URL.createObjectURL(new Blob([JSON.stringify(bundle)], { type: "application/json" }))
+  }
+
+  function downloadJson(bundle: ExportBundle, filename: string) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }))
     const anchor = document.createElement("a")
     anchor.href = url
-    anchor.download = "旅遊足跡.json"
+    anchor.download = filename
     anchor.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function exportTrips() {
+    notify("正在打包足跡…")
+    downloadJson(await bundleTrips(), "旅遊足跡.json")
     notify("已匯出旅遊足跡.json")
+  }
+
+  async function downloadPublicFootprints() {
+    notify("正在打包足跡…")
+    downloadJson(await bundleTrips(), "footprints.json")
+    notify("已下載 footprints.json。放到專案的 public/data/ 再推送，別人就能看到。")
   }
 
   async function onImportFile(file: File | undefined) {
@@ -896,12 +931,18 @@ export function TravelApp() {
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>分享給朋友</DialogTitle>
+            <DialogTitle>讓別人看到我的旅程</DialogTitle>
             <DialogDescription>
-              朋友用自己的手機或電腦打開，會看到空白地圖。旅程只留在各自的瀏覽器，不會混在一起，也不會上傳。若網站有進入密碼，請另外把密碼傳給朋友，不要寫進網址。
+              別人打開網站時會看到「公開足跡」。這本來自專案裡的 public/data/footprints.json。你這台裝置上的其他足跡本仍只留在這台瀏覽器。
             </DialogDescription>
           </DialogHeader>
           {shareOpen && <ShareLinkNotice />}
+          <ol className="list-decimal space-y-1 pl-5 text-sm leading-6 text-muted-foreground">
+            <li>按「下載公開足跡」，存成 footprints.json。</li>
+            <li>用這個檔案覆蓋專案裡的 public/data/footprints.json。</li>
+            <li>推上 GitHub 之後，到 Settings → Pages，Source 選 GitHub Actions。</li>
+            <li>把公開網址傳給朋友。朋友重新整理就能看到這些旅程。</li>
+          </ol>
           <div className="space-y-2">
             <p className="font-medium">這台裝置上的足跡本</p>
             <p className="text-xs leading-5 text-muted-foreground">
@@ -953,8 +994,11 @@ export function TravelApp() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" onClick={() => void copyShareLink()}>
+            <Button type="button" variant="outline" onClick={() => void copyShareLink()}>
               複製網址
+            </Button>
+            <Button type="button" onClick={() => void downloadPublicFootprints()}>
+              下載公開足跡
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -994,7 +1038,7 @@ function ShareLinkNotice() {
       <p className="break-all rounded-xl bg-secondary px-3 py-2 text-xs">{origin}</p>
       {localOnly && (
         <p className="text-xs leading-5 text-muted-foreground">
-          這個網址現在只在這台電腦上。朋友要從自己的手機進來，需要先把網站放到網路上。同一台裝置可以直接用下面的足跡本把紀錄分開。
+          這個網址現在只在這台電腦上。朋友要從自己的手機看到你的旅程，需要先把 footprints.json 放進專案，再發布到 GitHub Pages。
         </p>
       )}
     </div>

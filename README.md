@@ -31,20 +31,28 @@ npm run dev -- -H 0.0.0.0 -p 43123
 
 地圖地名使用 Google 的繁體中文圖磚，需要網路才能看到。國家界線已包含在專案裡。
 
+## 讓別人看到我的旅程
+
+`public/data/footprints.json` 是網站上的公開足跡。別人打開網址時會看到這份檔案裡的旅程。你瀏覽器裡另外建立的足跡本不會自動上傳。
+
+1. 在網站按「分享」，再按「下載公開足跡」。
+2. 用下載的 `footprints.json` 覆蓋 `public/data/footprints.json`。
+3. 提交並推上 GitHub 的 `main`。
+4. 到該存放庫的 Settings → Pages → Build and deployment，Source 選 GitHub Actions。
+5. Actions 完成後，網址是 `https://你的帳號.github.io/存放庫名稱/`。存放庫名稱若是 `帳號.github.io`，網址則是 `https://帳號.github.io/`。
+
+GitHub Pages 是靜態網頁，公開網址不使用進入密碼。存放庫需要是 Public，免費方案才會提供 Pages。
+
 ## 放到 GitHub Pages
 
-旅程不會因為網站上線就上傳。每個人的紀錄仍在自己的瀏覽器。GitHub Pages 是靜態網頁，公開網址不使用進入密碼。
-
-1. 在 Cursor 建立 GitHub 存放庫，並把 `main` 推上去。
-2. 到該存放庫的 Settings → Pages → Build and deployment，Source 選 GitHub Actions。
-3. 推上 `main` 之後，Actions 會自動發布。網址會是 `https://你的帳號.github.io/存放庫名稱/`。如果存放庫名稱是 `帳號.github.io`，網址則是 `https://帳號.github.io/`。
+上面的步驟會一併把網站發布到 GitHub Pages。公開檔已經包含美加極光海陸旅行團，以及橫濱、鎌倉。你之後新加的旅程，要再下載一次公開足跡並覆蓋檔案，朋友重新整理才看得到。
 
 ## 放到 Vercel
 
 若要設定進入密碼，改用有伺服器的主機。
 
 1. 到 [Vercel](https://vercel.com) 用該存放庫建立專案，框架選 Next.js。
-2. 在 Vercel 的 Environment Variables 新增 `SITE_PASSWORD`，值是你要給朋友的進入密碼。留空則任何人拿到網址都能打開網站，但仍然看不到別人的旅程。
+2. 在 Vercel 的 Environment Variables 新增 `SITE_PASSWORD`，值是你要給朋友的進入密碼。留空則任何人拿到網址都能打開網站，並看到公開足跡。各自另外建立的足跡本仍然只留在自己的瀏覽器。
 3. 部署完成後，把 `https://` 開頭的網址傳給朋友，密碼另外傳，不要寫在網址裡。
 
 改密碼之後重新部署，舊的進入狀態會失效。想改回公開，刪掉 `SITE_PASSWORD` 再部署一次。

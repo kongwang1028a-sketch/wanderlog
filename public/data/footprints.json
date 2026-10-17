@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "exportedAt": "2026-10-17T00:00:00.000Z",
+  "trips": [
+    {
+      "id": "yokohama-kamakura-2026",
+      "title": "橫濱、鎌倉",
+      "startDate": "2026-01-17",
+      "endDate": "2026-01-20",
+      "notes": "同行：玟璇、梗梗。去回都是經濟艙，機上註記 Wifi Magic5，各可累積 931 哩。",
+      "stops": [
+        {
+          "id": "9803a5ae-84c8-4388-a109-3d9e5d56ec07",
+          "cityId": "jp-yokohama",
+          "name": "橫濱",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 35.4437,
+          "lng": 139.638,
+          "date": "2026-01-17",
+          "note": "住在港未來。橫濱站東口步行約 11 分鐘，新高島站 4 號出口約 5 分鐘。"
+        },
+        {
+          "id": "8deebb1e-1349-4e1b-abef-b9530dc3e186",
+          "cityId": "jp-kamakura",
+          "name": "鎌倉",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 35.3192,
+          "lng": 139.5467
+        }
+      ],
+      "flights": [
+        {
+          "id": "yokohama-kamakura-2026-jl96",
+          "aircraft": "JL96",
+          "route": "1/17 09:10 松山－13:00 羽田・經濟艙"
+        },
+        {
+          "id": "yokohama-kamakura-2026-jl99",
+          "aircraft": "JL99",
+          "route": "1/20 18:10 羽田－21:00 松山・經濟艙"
+        }
+      ],
+      "stays": [
+        {
+          "id": "yokohama-kamakura-2026-hilton",
+          "name": "橫濱希爾頓酒店",
+          "stopId": "9803a5ae-84c8-4388-a109-3d9e5d56ec07"
+        }
+      ],
+      "photos": [],
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "aurora-pacific-2026",
+      "title": "美加極光海陸旅行團",
+      "startDate": "2026-09-19",
+      "endDate": "2026-10-03",
+      "notes": "10/2 在飛機上跨越國際換日線，10/3 抵達台灣。",
+      "stops": [
+        {
+          "id": "3ef5b507-30d3-48e8-86da-dda99f26df2d",
+          "cityId": "us-seattle",
+          "name": "西雅圖",
+          "country": "美國",
+          "countryCode": "US",
+          "lat": 47.6062,
+          "lng": -122.3321,
+          "date": "2026-09-19",
+          "note": "登星辰公主號"
+        },
+        {
+          "id": "dbf99804-587a-4b4e-9061-864c9c10ad30",
+          "cityId": "ca-inside-passage",
+          "name": "內陸航道",
+          "country": "加拿大",
+          "countryCode": "CA",
+          "lat": 52.37,
+          "lng": -128.15,
+          "date": "2026-09-21"
+        },
+        {
+          "id": "d1a62dcb-086d-4ea0-bdc2-6c6738dd39ce",
+          "cityId": "us-juneau",
+          "name": "朱諾",
+          "country": "美國",
+          "countryCode": "US",
+          "lat": 58.3019,
+          "lng": -134.4197,
+          "date": "2026-09-22"
+        },
+        {
+          "id": "a04b2864-e2a4-44f2-b9d0-e85b18432e3e",
+          "cityId": "us-skagway",
+          "name": "史凱威",
+          "country": "美國",
+          "countryCode": "US",
+          "lat": 59.4583,
+          "lng": -135.3139,
+          "date": "2026-09-23"
+        },
+        {
+          "id": "91d557ed-f920-496f-9fdb-3e20c80447f6",
+          "cityId": "us-dawes",
+          "name": "恩迪科特灣",
+          "country": "美國",
+          "countryCode": "US",
+          "lat": 57.48,
+          "lng": -132.98,
+          "date": "2026-09-24",
+          "note": "道斯冰河"
+        },
+        {
+          "id": "5d9eefac-d3a6-4174-b8a8-735a29e891a9",
+          "cityId": "us-ketchikan",
+          "name": "柯契侃",
+          "country": "美國",
+          "countryCode": "US",
+          "lat": 55.3422,
+          "lng": -131.6461,
+          "date": "2026-09-25"
+        },
+        {
+          "id": "7f9d469a-8849-458f-a03e-e87eea0e9e7a",
+          "cityId": "ca-vancouver",
+          "name": "溫哥華",
+          "country": "加拿大",
+          "countryCode": "CA",
+          "lat": 49.2827,
+          "lng": -123.1207,
+          "date": "2026-09-26",
+          "note": "溫哥華市區"
+        },
+        {
+          "id": "acf9166f-a383-4634-acee-111e0e079189",
+          "cityId": "ca-yellowknife",
+          "name": "黃刀鎮",
+          "country": "加拿大",
+          "countryCode": "CA",
+          "lat": 62.454,
+          "lng": -114.3718,
+          "date": "2026-09-27",
+          "note": "極光追尋、極地體驗"
+        },
+        {
+          "id": "ae2b7b02-0d8e-495a-b5ec-af6a78716dd6",
+          "cityId": "ca-vancouver",
+          "name": "溫哥華",
+          "country": "加拿大",
+          "countryCode": "CA",
+          "lat": 49.2827,
+          "lng": -123.1207,
+          "date": "2026-10-01"
+        },
+        {
+          "id": "98e156a5-a79b-4c40-a2bc-2ec230c40ec2",
+          "cityId": "us-seattle",
+          "name": "西雅圖",
+          "country": "美國",
+          "countryCode": "US",
+          "lat": 47.6062,
+          "lng": -122.3321,
+          "date": "2026-10-01"
+        }
+      ],
+      "flights": [],
+      "stays": [
+        {
+          "id": "aurora-pacific-2026-ship",
+          "name": "星辰公主號",
+          "stopId": "3ef5b507-30d3-48e8-86da-dda99f26df2d"
+        }
+      ],
+      "photos": [],
+      "createdAt": "2026-09-01T00:00:00.000Z"
+    }
+  ],
+  "photos": []
+}
