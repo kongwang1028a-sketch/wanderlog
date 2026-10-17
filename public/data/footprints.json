@@ -1,7 +1,31 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-17T13:55:00.000Z",
+  "exportedAt": "2026-10-17T14:10:00.000Z",
   "trips": [
+    {
+      "id": "austria-czech-2010",
+      "title": "2010年 奧地利、捷克",
+      "startDate": "2010-07-31",
+      "endDate": "2010-07-31",
+      "notes": "目前只有一張照片。相簿名稱是「2010奧地利捷克 05 布拉格」，檔名 288_Original.JPG。拍攝資訊是 2010年7月31日 上午11:44 GMT+8，SANYO CA65。奧地利沒有出現城市，地圖上先不標。",
+      "stops": [
+        {
+          "id": "austria-czech-2010-prague",
+          "cityId": "cz-prague",
+          "name": "布拉格",
+          "country": "捷克",
+          "countryCode": "CZ",
+          "lat": 50.0755,
+          "lng": 14.4378,
+          "date": "2010-07-31",
+          "note": "這張照片拍的是布拉格。"
+        }
+      ],
+      "flights": [],
+      "stays": [],
+      "photos": [],
+      "createdAt": "2010-07-31T03:44:00.000Z"
+    },
     {
       "id": "japan-2018",
       "title": "2018年10月 東京",

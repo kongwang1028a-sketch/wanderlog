@@ -17,6 +17,11 @@ import {
 } from "@/lib/outline-trips"
 import { JAPAN_2018_TITLE, JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
 import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
+import {
+  AUSTRIA_CZECH_2010_TITLE,
+  AUSTRIA_CZECH_2010_TRIP_ID,
+  createAustriaCzech2010Trip,
+} from "@/lib/austria-czech-2010-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
@@ -35,6 +40,7 @@ const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
 const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
 const JAPAN_2018_FOCUS_FLAG = "travel-footprints-japan-2018-focused"
 const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
+const AUSTRIA_CZECH_2010_FOCUS_FLAG = "travel-footprints-austria-czech-2010-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -158,6 +164,7 @@ export function subscribeTrips(listener: () => void) {
   ensureRussia2018Trip()
   ensureJapan2018Trip()
   dropUnownedJapan2019FebTrip()
+  ensureAustriaCzech2010Trip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -735,6 +742,56 @@ function ensureJapan2018Trip() {
     pendingAuroraFocus = current.id
     localStorage.setItem(JAPAN_2018_FOCUS_FLAG, "1")
     localStorage.setItem(JAPAN_2018_TOKYO_FOCUS_FLAG, "1")
+  }
+}
+
+function sameAustriaCzech2010Trip(trip: Trip) {
+  if (trip.id === AUSTRIA_CZECH_2010_TRIP_ID) return true
+  return trip.title === AUSTRIA_CZECH_2010_TITLE && trip.startDate === "2010-07-31"
+}
+
+function austriaCzech2010TripCurrent(trip: Trip) {
+  return (
+    trip.title === AUSTRIA_CZECH_2010_TITLE &&
+    trip.startDate === "2010-07-31" &&
+    trip.endDate === "2010-07-31" &&
+    trip.stops.length === 1 &&
+    trip.stops[0]?.cityId === "cz-prague" &&
+    trip.stops[0]?.name === "布拉格" &&
+    trip.flights.length === 0 &&
+    trip.stays.length === 0 &&
+    trip.notes.includes("只有一張照片") &&
+    trip.notes.includes("奧地利沒有出現城市")
+  )
+}
+
+function ensureAustriaCzech2010Trip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameAustriaCzech2010Trip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !austriaCzech2010TripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(AUSTRIA_CZECH_2010_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createAustriaCzech2010Trip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        existing = [merged, ...existing.filter((trip) => !sameAustriaCzech2010Trip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(AUSTRIA_CZECH_2010_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(AUSTRIA_CZECH_2010_FOCUS_FLAG, "1")
   }
 }
 
