@@ -3,7 +3,7 @@ import { parseItinerary } from "@/lib/itinerary"
 import type { Trip } from "@/lib/types"
 
 export const KANSAI_TRIP_ID = "kansai-2026"
-export const KANSAI_TITLE = "2026年8月 關西"
+export const KANSAI_TITLE = "2016年8月 關西"
 
 export const KANSAI_TEXT = `8/6 after 15:00 checking, 大阪 downtown
 8/7 京都  西織鎮 西陣織會館 和服秀、 清水寺、 伏見稲荷大社 千本鳥居
@@ -39,8 +39,8 @@ const CITY_IDS = [
 ]
 
 export function createKansaiTrip(): Trip | null {
-  const parsed = parseItinerary(KANSAI_TEXT, new Date(2026, 9, 17))
-  if (parsed.stops.length !== CITY_IDS.length || parsed.startDate !== "2026-08-06" || parsed.endDate !== "2026-08-13") {
+  const parsed = parseItinerary(KANSAI_TEXT, new Date(2016, 7, 1))
+  if (parsed.stops.length !== CITY_IDS.length || parsed.startDate !== "2016-08-06" || parsed.endDate !== "2016-08-13") {
     return null
   }
   const stops = parsed.stops.map((stop, index) => stopFromCity(stop.city, stop.date, NOTES[index]))
@@ -48,13 +48,13 @@ export function createKansaiTrip(): Trip | null {
   return {
     id: KANSAI_TRIP_ID,
     title: KANSAI_TITLE,
-    startDate: "2026-08-06",
-    endDate: "2026-08-13",
+    startDate: "2016-08-06",
+    endDate: "2016-08-13",
     notes: "8/6 下午入住大阪。8/9 環球影城。8/10 有馬溫泉泡湯、懷石。8/13 晚上從大阪離開。",
     stops,
     flights: [],
     stays: [],
     photos: [],
-    createdAt: "2026-08-01T00:00:00.000Z",
+    createdAt: "2016-08-01T00:00:00.000Z",
   }
 }

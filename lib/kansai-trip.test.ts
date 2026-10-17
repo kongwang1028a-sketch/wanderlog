@@ -3,21 +3,21 @@ import { createKansaiTrip } from "./kansai-trip"
 
 const trip = createKansaiTrip()
 assert.ok(trip)
-assert.equal(trip.title, "2026年8月 關西")
-assert.equal(trip.startDate, "2026-08-06")
-assert.equal(trip.endDate, "2026-08-13")
+assert.equal(trip.title, "2016年8月 關西")
+assert.equal(trip.startDate, "2016-08-06")
+assert.equal(trip.endDate, "2016-08-13")
 assert.deepEqual(
   trip.stops.map((stop) => `${stop.date} ${stop.name}`),
   [
-    "2026-08-06 大阪",
-    "2026-08-07 京都",
-    "2026-08-08 姬路",
-    "2026-08-08 神戶",
-    "2026-08-09 大阪",
-    "2026-08-10 有馬溫泉",
-    "2026-08-11 奈良",
-    "2026-08-12 白川鄉",
-    "2026-08-13 大阪",
+    "2016-08-06 大阪",
+    "2016-08-07 京都",
+    "2016-08-08 姬路",
+    "2016-08-08 神戶",
+    "2016-08-09 大阪",
+    "2016-08-10 有馬溫泉",
+    "2016-08-11 奈良",
+    "2016-08-12 白川鄉",
+    "2016-08-13 大阪",
   ],
 )
 assert.match(trip.stops[1]?.note ?? "", /清水寺/)

@@ -12,6 +12,7 @@ const AURORA_FOCUS_FLAG = "travel-footprints-aurora-focused"
 const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
 const FUKUOKA_FOCUS_FLAG = "travel-footprints-fukuoka-focused"
 const KANSAI_FOCUS_FLAG = "travel-footprints-kansai-focused"
+const KANSAI_YEAR_FOCUS_FLAG = "travel-footprints-kansai-2016-focused"
 const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
 const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const AURORA_PORTS = [
@@ -397,16 +398,22 @@ function ensureFukuokaTrip() {
 
 function sameKansaiTrip(trip: Trip) {
   if (trip.id === KANSAI_TRIP_ID) return true
-  if (trip.startDate === "2026-08-06" && trip.stops.some((stop) => stop.cityId === "jp-shirakawa")) return true
-  return trip.title.includes("關西") && trip.startDate.startsWith("2026-08")
+  if (
+    (trip.startDate === "2016-08-06" || trip.startDate === "2026-08-06") &&
+    trip.stops.some((stop) => stop.cityId === "jp-shirakawa")
+  ) {
+    return true
+  }
+  return trip.title.includes("關西") && (trip.startDate.startsWith("2016-08") || trip.startDate.startsWith("2026-08"))
 }
 
 function kansaiTripCurrent(trip: Trip) {
   const ids = new Set(trip.stops.map((stop) => stop.cityId))
   return (
     ["jp-osaka", "jp-kyoto", "jp-himeji", "jp-kobe", "jp-arima", "jp-nara", "jp-shirakawa"].every((id) => ids.has(id)) &&
-    trip.startDate === "2026-08-06" &&
-    trip.endDate === "2026-08-13" &&
+    trip.startDate === "2016-08-06" &&
+    trip.endDate === "2016-08-13" &&
+    trip.title.includes("2016") &&
     trip.stops.some((stop) => stop.note?.includes("環球影城"))
   )
 }
@@ -436,9 +443,10 @@ function ensureKansaiTrip() {
       }
     }
   }
-  if (current && localStorage.getItem(KANSAI_FOCUS_FLAG) !== "1") {
+  if (current && localStorage.getItem(KANSAI_YEAR_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(KANSAI_FOCUS_FLAG, "1")
+    localStorage.setItem(KANSAI_YEAR_FOCUS_FLAG, "1")
   }
 }
 
