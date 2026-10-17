@@ -59,6 +59,8 @@ export type Pin = {
     stopId: string
     title: string
     startDate: string
+    date: string
+    places: string
   }[]
 }
 

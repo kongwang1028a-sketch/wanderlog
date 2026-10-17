@@ -219,21 +219,24 @@ function PlaceBody({
         <ul className="mt-2 space-y-2">
           {pin.visits
             .slice()
-            .sort((a, b) => b.startDate.localeCompare(a.startDate))
+            .sort((a, b) => b.date.localeCompare(a.date) || b.startDate.localeCompare(a.startDate))
             .map((visit) => (
               <li key={`${visit.tripId}-${visit.stopId}`}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-2xl border bg-background px-3 py-3 text-left hover:bg-secondary"
+                  className="flex w-full items-start justify-between gap-3 rounded-2xl border bg-background px-3 py-3 text-left hover:bg-secondary"
                   onClick={() => onOpenTrip(visit.tripId, visit.stopId)}
                 >
-                  <span className="font-medium">{visit.title}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(visit.startDate)}</span>
+                  <span className="min-w-0">
+                    <span className="block font-medium leading-6">{visit.places}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{visit.title}</span>
+                  </span>
+                  <span className="shrink-0 pt-1 text-xs text-muted-foreground">{formatDate(visit.date)}</span>
                 </button>
               </li>
             ))}
         </ul>
-        <p className="mt-2 text-xs text-muted-foreground">點一趟旅程，地圖會畫出那次的路線。</p>
+        <p className="mt-2 text-xs text-muted-foreground">每一列是那次停在這裡的景點。點進去會畫出整趟路線。</p>
       </section>
       <Separator />
       <section>

@@ -42,6 +42,86 @@ export function placeKey(stop: Pick<Stop, "cityId" | "lat" | "lng">) {
   return `geo:${stop.lat.toFixed(2)},${stop.lng.toFixed(2)}`
 }
 
+const LANDMARKS = [
+  "三鷹吉卜力美術館",
+  "華納兄弟哈利波特影城",
+  "任天堂東京旗艦店",
+  "東京站一番街",
+  "澀谷寶可夢中心",
+  "日本橋寶可夢中心",
+  "品川水族館",
+  "寶可夢咖啡",
+  "環球影城",
+  "晴空塔",
+  "神田明神",
+  "明治神宮",
+  "淺草寺",
+  "阿美橫丁",
+  "壽々喜園",
+  "白貓餐廳",
+  "海之中道",
+  "太宰府",
+  "伏見稻荷",
+  "清水寺",
+  "姬路城",
+  "北野異人館",
+  "有馬溫泉",
+  "東大寺",
+  "白川鄉",
+  "大涌谷",
+  "冰川神社",
+  "水族館",
+  "一番街",
+  "哈利波特",
+  "迪士尼",
+  "柚屋",
+  "築地",
+]
+
+const AREAS = ["秋葉原", "新宿", "銀座", "日本橋", "池袋", "澀谷", "川越", "天神", "小倉", "港未來"]
+
+const PLACE_NAMES = [...LANDMARKS, ...AREAS]
+const AREA_NAMES = new Set(AREAS)
+const PLACE_LIMIT = 4
+
+function isTransitMention(note: string, start: number, end: number, name: string) {
+  const prev = start > 0 ? note[start - 1] : ""
+  const next = end < note.length ? note[end] : ""
+  if (next === "線" || next === "站" || next === "搭") return true
+  if (next === "地" && note.startsWith("地鐵", end)) return true
+  if (name === "池袋" && (prev === "北" || prev === "區")) return true
+  if (prev === "回" && AREA_NAMES.has(name)) return true
+  return false
+}
+
+export function stopPlaceLine(note: string | undefined, fallback: string) {
+  if (!note) return fallback
+  const hits: { start: number; end: number; name: string }[] = []
+  for (const name of PLACE_NAMES) {
+    let from = 0
+    while (from < note.length) {
+      const start = note.indexOf(name, from)
+      if (start < 0) break
+      const end = start + name.length
+      if (!isTransitMention(note, start, end, name)) hits.push({ start, end, name })
+      from = end
+    }
+  }
+  hits.sort((a, b) => a.start - b.start || b.end - a.end)
+  const kept: { start: number; end: number; name: string }[] = []
+  for (const hit of hits) {
+    if (kept.some((item) => hit.start < item.end && hit.end > item.start)) continue
+    if (kept.some((item) => item.name === hit.name || item.name.includes(hit.name))) continue
+    kept.push(hit)
+  }
+  const landmarks = kept.filter((hit) => !AREA_NAMES.has(hit.name))
+  const areas = kept.filter((hit) => AREA_NAMES.has(hit.name))
+  const chosen = [...landmarks, ...areas].slice(0, PLACE_LIMIT)
+  if (chosen.length > 0) return chosen.map((hit) => hit.name).join("、")
+  const line = note.split("\n")[0]?.trim() || fallback
+  return line.length > 36 ? `${line.slice(0, 36)}…` : line
+}
+
 export function buildPins(trips: Trip[]): Pin[] {
   const pins = new Map<string, Pin>()
   for (const trip of trips) {
@@ -53,6 +133,8 @@ export function buildPins(trips: Trip[]): Pin[] {
         stopId: stop.id,
         title: trip.title,
         startDate: trip.startDate,
+        date: stop.date ?? trip.startDate,
+        places: stopPlaceLine(stop.note, stop.name),
       }
       if (existing) {
         existing.visits.push(visit)
