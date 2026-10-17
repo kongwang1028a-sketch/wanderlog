@@ -1,6 +1,7 @@
 import { AURORA_TITLE, AURORA_TRIP_ID, createAuroraTrip } from "@/lib/aurora-trip"
 import { FUKUOKA_TITLE, FUKUOKA_TRIP_ID, createFukuokaTrip } from "@/lib/fukuoka-trip"
 import { KANSAI_TITLE, KANSAI_TRIP_ID, createKansaiTrip } from "@/lib/kansai-trip"
+import { JAPAN_DEC_TITLE, JAPAN_DEC_TRIP_ID, createJapanDecemberTrip } from "@/lib/japan-dec-trip"
 import { TOKYO_MAY_TITLE, TOKYO_MAY_TRIP_ID, createTokyoMayTrip } from "@/lib/tokyo-may-trip"
 import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import { dataUrlToBlob } from "@/lib/images"
@@ -12,6 +13,7 @@ const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
 const FUKUOKA_FOCUS_FLAG = "travel-footprints-fukuoka-focused"
 const KANSAI_FOCUS_FLAG = "travel-footprints-kansai-focused"
 const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
+const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -127,6 +129,7 @@ export function subscribeTrips(listener: () => void) {
   ensureFukuokaTrip()
   ensureKansaiTrip()
   ensureTokyoMayTrip()
+  ensureJapanDecemberTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -486,6 +489,60 @@ function ensureTokyoMayTrip() {
   if (current && localStorage.getItem(TOKYO_MAY_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(TOKYO_MAY_FOCUS_FLAG, "1")
+  }
+}
+
+function sameJapanDecemberTrip(trip: Trip) {
+  if (trip.id === JAPAN_DEC_TRIP_ID) return true
+  if (trip.title.includes("2024年12月") && trip.stops.some((stop) => stop.cityId === "jp-kawaguchiko")) return true
+  return trip.startDate === "2024-12-14" && trip.stops.some((stop) => stop.cityId === "jp-kyoto")
+}
+
+function japanDecemberTripCurrent(trip: Trip) {
+  const ids = new Set(trip.stops.map((stop) => stop.cityId))
+  const stays = trip.stays.map((stay) => stay.name).join(" ")
+  return (
+    ids.has("jp-kyoto") &&
+    ids.has("jp-tokyo-disney") &&
+    ids.has("jp-kawaguchiko") &&
+    stays.includes("京都大倉") &&
+    stays.includes("迪士尼樂園飯店") &&
+    stays.includes("大使") &&
+    stays.includes("富士景觀") &&
+    stays.includes("拉維斯塔") &&
+    trip.startDate === "2024-12-14" &&
+    trip.endDate === "2024-12-21"
+  )
+}
+
+function ensureJapanDecemberTrip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameJapanDecemberTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !japanDecemberTripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(JAPAN_DEC_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createJapanDecemberTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        if (merged.title !== JAPAN_DEC_TITLE) merged.title = JAPAN_DEC_TITLE
+        existing = [merged, ...existing.filter((trip) => !sameJapanDecemberTrip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(JAPAN_DEC_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(JAPAN_DEC_FOCUS_FLAG, "1")
   }
 }
 
