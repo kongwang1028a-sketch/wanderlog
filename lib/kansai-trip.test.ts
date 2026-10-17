@@ -22,6 +22,7 @@ assert.deepEqual(
 )
 assert.match(trip.stops[1]?.note ?? "", /清水寺/)
 assert.match(trip.stops[1]?.note ?? "", /伏見稻荷/)
+assert.match(trip.stops[3]?.note ?? "", /コンチェルト/)
 assert.match(trip.stops[4]?.note ?? "", /環球影城/)
 assert.match(trip.stops[5]?.note ?? "", /懷石/)
 assert.match(trip.stops[6]?.note ?? "", /中谷堂/)

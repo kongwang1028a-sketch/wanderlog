@@ -70,13 +70,23 @@ function flagIcon(code: string, active: boolean, count: number) {
   })
 }
 
-function stopIcon(index: number, active: boolean) {
+function stopIcon(index: number, active: boolean, shift = { x: 0, y: 0 }) {
   return L.divIcon({
     className: "stop-marker",
     html: `<div class="stop-badge${active ? " is-active" : ""}">${index}</div>`,
     iconSize: [34, 34],
-    iconAnchor: [17, 17],
+    iconAnchor: [17 - shift.x, 17 - shift.y],
   })
+}
+
+function stopShift(stop: RouteStop, stops: RouteStop[]) {
+  const same = stops.filter(
+    (other) => Math.abs(other.lat - stop.lat) < 0.02 && Math.abs(other.lng - stop.lng) < 0.02,
+  )
+  if (same.length < 2) return { x: 0, y: 0 }
+  const order = same.findIndex((other) => other.id === stop.id)
+  const angle = -Math.PI / 2 + (order * 2 * Math.PI) / same.length
+  return { x: Math.round(Math.cos(angle) * 20), y: Math.round(Math.sin(angle) * 20) }
 }
 
 function cameraKey(camera: Camera) {
@@ -328,7 +338,7 @@ export default function WorldMap({
         <Marker
           key={stop.id}
           position={[stop.lat, stop.lng]}
-          icon={stopIcon(stop.index, stop.active)}
+          icon={stopIcon(stop.index, stop.active, stopShift(stop, routeStops))}
           zIndexOffset={stop.active ? 1200 : 900}
           eventHandlers={{
             click: () => onRouteStopClick(stop.id),

@@ -13,6 +13,7 @@ const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
 const FUKUOKA_FOCUS_FLAG = "travel-footprints-fukuoka-focused"
 const KANSAI_FOCUS_FLAG = "travel-footprints-kansai-focused"
 const KANSAI_YEAR_FOCUS_FLAG = "travel-footprints-kansai-2016-focused"
+const KANSAI_MAP_FLAG = "travel-footprints-kansai-2016-map"
 const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
 const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const AURORA_PORTS = [
@@ -131,6 +132,7 @@ export function subscribeTrips(listener: () => void) {
   ensureKansaiTrip()
   ensureTokyoMayTrip()
   ensureJapanDecemberTrip()
+  focusKansai2016()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -448,6 +450,17 @@ function ensureKansaiTrip() {
     localStorage.setItem(KANSAI_FOCUS_FLAG, "1")
     localStorage.setItem(KANSAI_YEAR_FOCUS_FLAG, "1")
   }
+}
+
+function focusKansai2016() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(KANSAI_MAP_FLAG) === "1") return
+  const current = getTripSnapshot().trips.find(sameKansaiTrip)
+  if (!current || !kansaiTripCurrent(current)) return
+  pendingAuroraFocus = current.id
+  localStorage.setItem(KANSAI_FOCUS_FLAG, "1")
+  localStorage.setItem(KANSAI_YEAR_FOCUS_FLAG, "1")
+  localStorage.setItem(KANSAI_MAP_FLAG, "1")
 }
 
 function sameTokyoMayTrip(trip: Trip) {
