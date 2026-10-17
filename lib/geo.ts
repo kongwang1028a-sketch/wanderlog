@@ -37,6 +37,20 @@ export function flagEmoji(code: string) {
     .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
 }
 
+export function pinYearLines(visits: { date: string; startDate: string }[], zoom = 8) {
+  const years = [
+    ...new Set(
+      visits
+        .map((visit) => (visit.date || visit.startDate).slice(0, 4))
+        .filter((year) => /^\d{4}$/.test(year)),
+    ),
+  ].sort()
+  if (years.length === 0) return ["⚑"]
+  if (zoom < 5) return [years[years.length - 1].slice(2)]
+  if (years.length === 1) return [years[0]]
+  return years.map((year) => year.slice(2))
+}
+
 export function placeKey(stop: Pick<Stop, "cityId" | "lat" | "lng">) {
   if (stop.cityId) return `city:${stop.cityId}`
   return `geo:${stop.lat.toFixed(2)},${stop.lng.toFixed(2)}`

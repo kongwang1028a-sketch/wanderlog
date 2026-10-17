@@ -13,7 +13,7 @@ import {
 } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
-import { cityRadiusMeters, flagEmoji } from "@/lib/geo"
+import { cityRadiusMeters, pinYearLines } from "@/lib/geo"
 import type { Pin } from "@/lib/types"
 
 export type Camera =
@@ -56,15 +56,28 @@ type WorldMapProps = {
   onPick: (lat: number, lng: number) => void
 }
 
-function flagIcon(code: string, active: boolean, count: number) {
+function flagIcon(lines: string[], active: boolean, count: number, side: "left" | "right") {
   const badge = count > 1 ? `<span class="flag-count">${count}</span>` : ""
+  const pennant = lines.map((line) => `<span class="flag-year">${line}</span>`).join("")
+  const width = Math.max(44, ...lines.map((line) => 16 + line.length * 7))
+  const height = 28 + lines.length * 16
+  const anchorX = side === "left" ? width - 8 : 8
   return L.divIcon({
     className: "flag-marker",
-    html: `<div class="flag-pin${active ? " is-active" : ""}"><span class="flag-pennant" aria-hidden="true">${flagEmoji(code)}</span><span class="flag-pole"></span>${badge}</div>`,
-    iconSize: [44, 50],
-    iconAnchor: [8, 48],
-    tooltipAnchor: [14, -42],
+    html: `<div class="flag-pin${active ? " is-active" : ""}${side === "left" ? " is-left" : ""}" style="width:${width}px;height:${height}px"><span class="flag-pennant" aria-hidden="true">${pennant}</span><span class="flag-pole"></span>${badge}</div>`,
+    iconSize: [width, height],
+    iconAnchor: [anchorX, height - 2],
+    tooltipAnchor: [side === "left" ? -12 : width / 2, -height + 6],
   })
+}
+
+function pinTripLines(pin: Pin) {
+  const trips = new Map<string, { title: string; date: string }>()
+  for (const visit of pin.visits) {
+    const existing = trips.get(visit.tripId)
+    if (!existing || visit.date < existing.date) trips.set(visit.tripId, { title: visit.title, date: visit.date })
+  }
+  return [...trips.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
 
 function stopIcon(index: number, active: boolean, shift = { x: 0, y: 0 }) {
@@ -204,6 +217,73 @@ function TraditionalTiles() {
   return null
 }
 
+function YearMarkers({
+  pins,
+  activePinKey,
+  onPinClick,
+}: {
+  pins: Pin[]
+  activePinKey?: string | null
+  onPinClick: (key: string) => void
+}) {
+  const map = useMap()
+  const [zoom, setZoom] = useState(() => map.getZoom())
+  useMapEvents({
+    zoom() {
+      setZoom(map.getZoom())
+    },
+  })
+
+  const points = pins.map((pin) => ({ pin, point: map.latLngToContainerPoint([pin.lat, pin.lng]) }))
+  const side = new Map<string, "left" | "right">()
+  for (const current of points) {
+    let nearest = 78
+    let facing: "left" | "right" = "right"
+    for (const other of points) {
+      if (other.pin.key === current.pin.key) continue
+      const distance = Math.hypot(current.point.x - other.point.x, current.point.y - other.point.y)
+      if (distance >= nearest) continue
+      nearest = distance
+      facing = current.point.x <= other.point.x ? "left" : "right"
+    }
+    side.set(current.pin.key, facing)
+  }
+
+  return (
+    <>
+      {pins.map((pin) => {
+        const trips = pinTripLines(pin)
+        return (
+          <Marker
+            key={pin.key}
+            position={[pin.lat, pin.lng]}
+            icon={flagIcon(
+              pinYearLines(pin.visits, zoom),
+              pin.key === activePinKey,
+              pin.visits.length,
+              side.get(pin.key) ?? "right",
+            )}
+            zIndexOffset={pin.key === activePinKey ? 800 : 0}
+            eventHandlers={{
+              click: () => onPinClick(pin.key),
+            }}
+          >
+            <Tooltip direction="top" opacity={1}>
+              <span className="font-medium">{pin.name}</span>
+              <span className="text-muted-foreground"> · {pin.country}</span>
+              {trips.map((trip) => (
+                <span key={trip.date + trip.title} className="mt-0.5 block text-xs">
+                  {trip.title}
+                </span>
+              ))}
+            </Tooltip>
+          </Marker>
+        )
+      })}
+    </>
+  )
+}
+
 function CityDiscs({ pins }: { pins: Pin[] }) {
   const map = useMap()
   const [zoom, setZoom] = useState(() => map.getZoom())
@@ -294,24 +374,11 @@ export default function WorldMap({
           />
         </>
       )}
-      {pins
-        .filter((pin) => !routePinsHidden(pin))
-        .map((pin) => (
-          <Marker
-            key={pin.key}
-            position={[pin.lat, pin.lng]}
-            icon={flagIcon(pin.countryCode, pin.key === activePinKey, pin.visits.length)}
-            zIndexOffset={pin.key === activePinKey ? 800 : 0}
-            eventHandlers={{
-              click: () => onPinClick(pin.key),
-            }}
-          >
-            <Tooltip direction="top" opacity={1}>
-              <span className="font-medium">{pin.name}</span>
-              <span className="text-muted-foreground"> · {pin.country}</span>
-            </Tooltip>
-          </Marker>
-        ))}
+      <YearMarkers
+        pins={pins.filter((pin) => !routePinsHidden(pin))}
+        activePinKey={activePinKey}
+        onPinClick={onPinClick}
+      />
       {routeStops.map((stop) => (
         <Marker
           key={stop.id}
