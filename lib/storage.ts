@@ -17,7 +17,6 @@ import {
 } from "@/lib/outline-trips"
 import { JAPAN_2018_TITLE, JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
 import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
-import { JAPAN_2019_FEB_TITLE, JAPAN_2019_FEB_TRIP_ID, createJapan2019FebTrip } from "@/lib/japan-2019-feb-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
@@ -34,7 +33,6 @@ const JAPAN_JUN_2023_FOCUS_FLAG = "travel-footprints-japan-jun-2023-focused"
 const GERMANY_2017_FOCUS_FLAG = "travel-footprints-germany-2017-focused"
 const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
 const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
-const JAPAN_2019_FEB_FOCUS_FLAG = "travel-footprints-japan-2019-feb-focused"
 const JAPAN_2018_FOCUS_FLAG = "travel-footprints-japan-2018-focused"
 const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
 const AURORA_PORTS = [
@@ -159,7 +157,7 @@ export function subscribeTrips(listener: () => void) {
   ensureJapan2019Trip()
   ensureRussia2018Trip()
   ensureJapan2018Trip()
-  ensureJapan2019FebTrip()
+  dropUnownedJapan2019FebTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -740,54 +738,32 @@ function ensureJapan2018Trip() {
   }
 }
 
-function sameJapan2019FebTrip(trip: Trip) {
-  if (trip.id === JAPAN_2019_FEB_TRIP_ID) return true
-  return trip.startDate === "2019-02-04" && trip.stops.some((stop) => stop.note?.includes("アパホテル"))
+function isUnownedJapan2019FebTrip(trip: Trip) {
+  return trip.id === "japan-2019-feb" || (trip.title === "2019年2月 東京" && trip.startDate === "2019-02-04")
 }
 
-function japan2019FebTripCurrent(trip: Trip) {
-  const ids = trip.stops.map((stop) => stop.cityId)
-  const flights = trip.flights.map((flight) => flight.aircraft)
-  return (
-    trip.title === JAPAN_2019_FEB_TITLE &&
-    trip.startDate === "2019-02-04" &&
-    trip.endDate === "2019-02-10" &&
-    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-tokyo" &&
-    flights.join(",") === "JW102,JW101" &&
-    trip.stays.some((stay) => stay.name.includes("アパホテル")) &&
-    trip.notes.includes("沒有寫座位號碼") &&
-    trip.stops.some((stop) => stop.note?.includes("墨田水族館")) &&
-    trip.stops.some((stop) => stop.note?.includes("舞濱"))
-  )
-}
-
-function ensureJapan2019FebTrip() {
+function dropUnownedJapan2019FebTrip() {
   if (typeof localStorage === "undefined") return
-  let existing = getTripSnapshot().trips
-  const index = existing.findIndex(sameJapan2019FebTrip)
-  let current = index >= 0 ? existing[index] : undefined
-  if (!current || !japan2019FebTripCurrent(current)) {
-    const canInsert = !current && localStorage.getItem(JAPAN_2019_FEB_FOCUS_FLAG) !== "1"
-    if (current || canInsert) {
-      const created = createJapan2019FebTrip()
-      if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
-        existing = [merged, ...existing.filter((trip) => !sameJapan2019FebTrip(trip))]
-        writeTrips(existing)
-        current = merged
-      }
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      const trips = parsed.filter(isTrip)
+      if (!trips.some(isUnownedJapan2019FebTrip)) continue
+      localStorage.setItem(key, JSON.stringify(trips.filter((trip) => !isUnownedJapan2019FebTrip(trip))))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
     }
   }
-  if (current && localStorage.getItem(JAPAN_2019_FEB_FOCUS_FLAG) !== "1") {
-    pendingAuroraFocus = current.id
-    localStorage.setItem(JAPAN_2019_FEB_FOCUS_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
   }
 }
 
