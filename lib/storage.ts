@@ -12,6 +12,7 @@ import {
   createGermany2017Trip,
   createJapanJun2023Trip,
 } from "@/lib/outline-trips"
+import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
@@ -26,6 +27,7 @@ const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
 const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const JAPAN_JUN_2023_FOCUS_FLAG = "travel-footprints-japan-jun-2023-focused"
 const GERMANY_2017_FOCUS_FLAG = "travel-footprints-germany-2017-focused"
+const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -145,6 +147,7 @@ export function subscribeTrips(listener: () => void) {
   focusKansai2016()
   ensureJapanJun2023Trip()
   ensureGermany2017Trip()
+  ensureJapan2019Trip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -568,6 +571,57 @@ function ensureGermany2017Trip() {
   if (current && localStorage.getItem(GERMANY_2017_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(GERMANY_2017_FOCUS_FLAG, "1")
+  }
+}
+
+function sameJapan2019Trip(trip: Trip) {
+  if (trip.id === JAPAN_2019_TRIP_ID) return true
+  return trip.startDate === "2019-09-28" && trip.title.includes("日本")
+}
+
+function japan2019TripCurrent(trip: Trip) {
+  const ids = trip.stops.map((stop) => stop.cityId)
+  const notes = trip.stops.map((stop) => stop.note ?? "").join("\n")
+  return (
+    trip.title === JAPAN_2019_TITLE &&
+    trip.startDate === "2019-09-28" &&
+    trip.endDate === "2019-10-05" &&
+    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-osaka,jp-kobe,jp-osaka" &&
+    notes.includes("晴空塔") &&
+    notes.includes("石田屋") &&
+    notes.includes("關西空港") &&
+    trip.flights.length === 0 &&
+    trip.stays.length === 0
+  )
+}
+
+function ensureJapan2019Trip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameJapan2019Trip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !japan2019TripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(JAPAN_2019_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createJapan2019Trip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        existing = [merged, ...existing.filter((trip) => !sameJapan2019Trip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(JAPAN_2019_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(JAPAN_2019_FOCUS_FLAG, "1")
   }
 }
 

@@ -136,7 +136,7 @@ function TripBody({
                     {stop.date && (
                       <span className="mt-0.5 block text-xs text-muted-foreground">{formatDate(stop.date)}</span>
                     )}
-                    {stop.note && <span className="mt-1 block text-sm leading-5">{stop.note}</span>}
+                    {stop.note && <span className="mt-1 block text-sm leading-5 whitespace-pre-wrap">{stop.note}</span>}
                   </span>
                 </button>
               </li>
