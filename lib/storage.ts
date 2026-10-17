@@ -1,6 +1,7 @@
 import { AURORA_TITLE, AURORA_TRIP_ID, createAuroraTrip } from "@/lib/aurora-trip"
 import { FUKUOKA_TITLE, FUKUOKA_TRIP_ID, createFukuokaTrip } from "@/lib/fukuoka-trip"
 import { KANSAI_TITLE, KANSAI_TRIP_ID, createKansaiTrip } from "@/lib/kansai-trip"
+import { TOKYO_MAY_TITLE, TOKYO_MAY_TRIP_ID, createTokyoMayTrip } from "@/lib/tokyo-may-trip"
 import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
@@ -10,6 +11,7 @@ const AURORA_FOCUS_FLAG = "travel-footprints-aurora-focused"
 const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
 const FUKUOKA_FOCUS_FLAG = "travel-footprints-fukuoka-focused"
 const KANSAI_FOCUS_FLAG = "travel-footprints-kansai-focused"
+const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -124,6 +126,7 @@ export function subscribeTrips(listener: () => void) {
   ensureYokohamaTrip()
   ensureFukuokaTrip()
   ensureKansaiTrip()
+  ensureTokyoMayTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -433,6 +436,56 @@ function ensureKansaiTrip() {
   if (current && localStorage.getItem(KANSAI_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(KANSAI_FOCUS_FLAG, "1")
+  }
+}
+
+function sameTokyoMayTrip(trip: Trip) {
+  if (trip.id === TOKYO_MAY_TRIP_ID) return true
+  if (trip.title.includes("五月東京")) return true
+  return trip.startDate === "2024-05-18" && trip.stops.some((stop) => stop.cityId === "jp-tokyo-disney")
+}
+
+function tokyoMayTripCurrent(trip: Trip) {
+  const ids = trip.stops.map((stop) => stop.cityId)
+  const stays = trip.stays.map((stay) => stay.name).join(" ")
+  return (
+    ids[0] === "jp-tokyo" &&
+    ids.includes("jp-tokyo-disney") &&
+    stays.includes("東美滿如家") &&
+    trip.startDate === "2024-05-18" &&
+    trip.endDate === "2024-05-22" &&
+    trip.stops.some((stop) => stop.note?.includes("哈利波特"))
+  )
+}
+
+function ensureTokyoMayTrip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameTokyoMayTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !tokyoMayTripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(TOKYO_MAY_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createTokyoMayTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        if (merged.title !== TOKYO_MAY_TITLE) merged.title = TOKYO_MAY_TITLE
+        existing = [merged, ...existing.filter((trip) => !sameTokyoMayTrip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(TOKYO_MAY_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(TOKYO_MAY_FOCUS_FLAG, "1")
   }
 }
 
