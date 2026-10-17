@@ -1,9 +1,11 @@
 import { AURORA_TITLE, AURORA_TRIP_ID, createAuroraTrip } from "@/lib/aurora-trip"
+import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
 const AURORA_SEED_KEY = "travel-footprints-seeded-aurora"
 const AURORA_FOCUS_FLAG = "travel-footprints-aurora-focused"
+const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -110,6 +112,7 @@ export function ensureBooks() {
 export function subscribeTrips(listener: () => void) {
   ensureBooks()
   ensureAuroraTrip()
+  ensureYokohamaTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -266,6 +269,59 @@ function ensureAuroraTrip() {
   if (current && localStorage.getItem(AURORA_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(AURORA_FOCUS_FLAG, "1")
+  }
+}
+
+function sameYokohamaTrip(trip: Trip) {
+  if (trip.id === YOKOHAMA_TRIP_ID) return true
+  const title = trip.title.replace(/鐮/g, "鎌")
+  if (title.includes("橫濱") && title.includes("鎌倉")) return true
+  return trip.startDate === "2026-01-17" && trip.stops.some((stop) => stop.cityId === "jp-yokohama")
+}
+
+function yokohamaTripCurrent(trip: Trip) {
+  const ids = new Set(trip.stops.map((stop) => stop.cityId))
+  const flights = trip.flights.map((flight) => `${flight.aircraft} ${flight.route}`).join(" ")
+  const stays = trip.stays.map((stay) => stay.name).join(" ")
+  return (
+    ids.has("jp-yokohama") &&
+    ids.has("jp-kamakura") &&
+    flights.includes("JL96") &&
+    flights.includes("JL99") &&
+    stays.includes("希爾頓") &&
+    trip.startDate === "2026-01-17" &&
+    trip.endDate === "2026-01-20"
+  )
+}
+
+function ensureYokohamaTrip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameYokohamaTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !yokohamaTripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(YOKOHAMA_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createYokohamaTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        if (merged.title !== YOKOHAMA_TITLE) merged.title = YOKOHAMA_TITLE
+        existing = [merged, ...existing.filter((trip) => !sameYokohamaTrip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(YOKOHAMA_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(YOKOHAMA_FOCUS_FLAG, "1")
   }
 }
 

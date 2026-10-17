@@ -120,7 +120,7 @@ export function TravelApp() {
   }
 
   useEffect(() => {
-    if (toast !== "已放上美加極光海陸旅行團") return
+    if (!toast?.startsWith("已放上")) return
     const timer = window.setTimeout(() => setToast(null), 3200)
     return () => window.clearTimeout(timer)
   }, [toast])
@@ -567,7 +567,7 @@ export function TravelApp() {
         points: aurora.stops.map((stop) => [stop.lat, stop.lng]),
         ...panelFrame(),
       })
-      setToast("已放上美加極光海陸旅行團")
+      setToast(`已放上${aurora.title}`)
     }
   }
 
