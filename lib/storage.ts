@@ -1,4 +1,5 @@
 import { AURORA_TITLE, AURORA_TRIP_ID, createAuroraTrip } from "@/lib/aurora-trip"
+import { FUKUOKA_TITLE, FUKUOKA_TRIP_ID, createFukuokaTrip } from "@/lib/fukuoka-trip"
 import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
@@ -6,6 +7,7 @@ import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } fro
 const AURORA_SEED_KEY = "travel-footprints-seeded-aurora"
 const AURORA_FOCUS_FLAG = "travel-footprints-aurora-focused"
 const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
+const FUKUOKA_FOCUS_FLAG = "travel-footprints-fukuoka-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -118,6 +120,7 @@ export function subscribeTrips(listener: () => void) {
   ensureBooks()
   ensureAuroraTrip()
   ensureYokohamaTrip()
+  ensureFukuokaTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -327,6 +330,59 @@ function ensureYokohamaTrip() {
   if (current && localStorage.getItem(YOKOHAMA_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(YOKOHAMA_FOCUS_FLAG, "1")
+  }
+}
+
+function sameFukuokaTrip(trip: Trip) {
+  if (trip.id === FUKUOKA_TRIP_ID) return true
+  if (trip.title.includes("福岡") && trip.title.includes("4天3夜")) return true
+  return trip.startDate === "2025-10-23" && trip.stops.some((stop) => stop.cityId === "jp-kitakyushu")
+}
+
+function fukuokaTripCurrent(trip: Trip) {
+  const ids = new Set(trip.stops.map((stop) => stop.cityId))
+  const flights = trip.flights.map((flight) => `${flight.aircraft} ${flight.route}`).join(" ")
+  const stays = trip.stays.map((stay) => stay.name).join(" ")
+  return (
+    ids.has("jp-fukuoka") &&
+    ids.has("jp-kitakyushu") &&
+    flights.includes("BR106") &&
+    flights.includes("JX841") &&
+    stays.includes("Blossom") &&
+    stays.includes("REI") &&
+    trip.startDate === "2025-10-23" &&
+    trip.endDate === "2025-10-26"
+  )
+}
+
+function ensureFukuokaTrip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameFukuokaTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !fukuokaTripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(FUKUOKA_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createFukuokaTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        if (merged.title !== FUKUOKA_TITLE) merged.title = FUKUOKA_TITLE
+        existing = [merged, ...existing.filter((trip) => !sameFukuokaTrip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(FUKUOKA_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(FUKUOKA_FOCUS_FLAG, "1")
   }
 }
 
