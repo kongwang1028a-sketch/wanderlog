@@ -1,5 +1,8 @@
+import { AURORA_TITLE, AURORA_TRIP_ID, createAuroraTrip } from "@/lib/aurora-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
+
+const AURORA_SEED_KEY = "travel-footprints-seeded-aurora"
 
 const LEGACY_TRIP_KEY = "travel-footprints-v1"
 const BOOKS_KEY = "travel-footprints-books"
@@ -89,6 +92,7 @@ export function ensureBooks() {
 
 export function subscribeTrips(listener: () => void) {
   ensureBooks()
+  ensureAuroraTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -202,6 +206,20 @@ export function removeBook(id: string) {
 
 export function updateTrips(updater: (current: Trip[]) => Trip[]) {
   writeTrips(updater(getTripSnapshot().trips))
+}
+
+function ensureAuroraTrip() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(AURORA_SEED_KEY)) return
+  const existing = getTripSnapshot().trips
+  if (existing.some((trip) => trip.id === AURORA_TRIP_ID || trip.title === AURORA_TITLE)) {
+    localStorage.setItem(AURORA_SEED_KEY, "1")
+    return
+  }
+  const trip = createAuroraTrip()
+  if (!trip) return
+  localStorage.setItem(AURORA_SEED_KEY, "1")
+  writeTrips([trip, ...existing])
 }
 
 function openDb() {

@@ -295,4 +295,42 @@ check("標題含城市但仍讀內文", () => {
   )
 })
 
+check("美加極光海陸旅行團", () => {
+  const parsed = parseItinerary(
+    `美加極光海陸旅行團
+2026/9/19-10/3
+9/19 台灣－西雅圖
+9/20 西雅圖 登星辰公主號
+9/21 內陸航道巡航
+9/22 阿拉斯加 朱諾 (Juneau)
+9/23 阿拉斯加 史凱威 (Skagway)
+9/24 恩迪科特灣與道斯冰河巡航 (Endicott Arm & Dawes Glacier)
+9/25 阿拉斯加 柯契侃 (Ketchikan)
+9/26 溫哥華 下船－溫哥華市區
+9/27 溫哥華－黃刀鎮
+9/28-9/30 黃刀鎮 極光追尋與極地體驗
+10/1 黃刀鎮－溫哥華 / 西雅圖
+10/2 跨越國際換日線（機上）
+10/3 抵達台灣`,
+    today,
+  )
+  assert.equal(parsed.title, "美加極光海陸旅行團")
+  assert.equal(parsed.startDate, "2026-09-19")
+  assert.equal(parsed.endDate, "2026-10-03")
+  assert.deepEqual(
+    parsed.stops.map((stop) => stop.city.zh),
+    ["西雅圖", "內陸航道", "朱諾", "史凱威", "恩迪科特灣", "柯契侃", "溫哥華", "黃刀鎮", "溫哥華", "西雅圖"],
+  )
+  assert.equal(parsed.stops[0]?.date, "2026-09-19")
+  assert.equal(parsed.stops[0]?.note, "登星辰公主號")
+  assert.equal(parsed.stops[4]?.date, "2026-09-24")
+  assert.equal(parsed.stops[4]?.note, "道斯冰河")
+  assert.equal(parsed.stops[7]?.date, "2026-09-27")
+  assert.match(parsed.stops[7]?.note ?? "", /極光追尋/)
+  assert.equal(parsed.stops[8]?.date, "2026-10-01")
+  assert.equal(parsed.stops[9]?.date, "2026-10-01")
+  assert.deepEqual(parsed.unmatched, [])
+  assert.equal(parsed.stops.some((stop) => stop.city.code === "TW"), false)
+})
+
 console.log("all passed")

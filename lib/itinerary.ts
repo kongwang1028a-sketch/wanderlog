@@ -16,14 +16,14 @@ export type ParsedItinerary = {
 }
 
 const TITLE_HINT = /自由行|之旅|旅行|行程|旅遊|度假|出差/
-const HOME_HINT = /回國|返國|返台|返臺|回台|回臺|回家|回程/
+const HOME_HINT = /回國|返國|返台|返臺|回台|回臺|回家|回程|抵達台灣|抵達臺灣|抵台/
 const NOTE_NOISE = /^(?:回國|返國|返台|返臺|回台|回臺|回家|回程|返回|出發|抵達|到達|轉機|回)$/
 const JOINERS = new Set(["and", "to", "via", "from", "then", "the", "of", "in"])
 const AMBIGUOUS_LATIN = new Set(["nice"])
 
 const EXTRA_NAMES: Record<string, string[]> = {
   "jp-tokyo": ["東京都"],
-  "tw-taipei": ["臺北"],
+  "tw-taipei": ["臺北", "台灣", "臺灣"],
   "tw-taichung": ["臺中"],
   "es-barcelona": ["巴塞羅那"],
   "it-florence": ["佛羅倫薩", "翡冷翠"],
@@ -248,6 +248,7 @@ function choosePlaces(places: PlaceHit[], isReturn: boolean) {
     seen.add(place.city.id)
     unique.push(place)
   }
+  if (unique.some((place) => place.city.code !== "TW")) return unique.filter((place) => place.city.code !== "TW")
   return unique
 }
 
@@ -451,8 +452,10 @@ function tightenNote(note: string | undefined, source: string) {
 function usefulNotePart(part: string) {
   if (part.length < 3 || part.length > 16 || /^\d/.test(part) || /^[-:：]/.test(part)) return false
   if (!/[\p{Script=Han}]{2,}/u.test(part)) return false
-  if (/[至線站約號的與或後在從往等]/.test(part)) return false
-  if (/列車|分鐘|航廈|接駁|巴士|計程車|地下鐵|寄放|行李|搭乘|返回|前往|抵達|轉乘|原路|用餐|購物|午餐|晚餐|早餐|自由活動|登機|報到|採買|小時|特急|音速|活動|參觀|入住|換飯|地鐵|電車/.test(part)) return false
+  if (part === "阿拉斯加") return false
+  if (/[至線站約的或後在從往等]/.test(part)) return false
+  if (/號/.test(part) && !/公主號/.test(part)) return false
+  if (/列車|分鐘|航廈|接駁|巴士|計程車|地下鐵|寄放|行李|搭乘|返回|前往|抵達|轉乘|原路|用餐|購物|午餐|晚餐|早餐|自由活動|登機|報到|採買|小時|特急|音速|活動|參觀|入住|換飯|地鐵|電車|巡航/.test(part)) return false
   return true
 }
 
@@ -466,6 +469,7 @@ function isMeta(line: string, dates: DateHit[]) {
 
 function worthReporting(line: string, dates: DateHit[]) {
   if (isMeta(line, dates)) return false
+  if (/換日線|機上/.test(line)) return false
   let text = stripDateText(line, dates)
   text = text.replace(/\d{1,2}:\d{2}/g, " ")
   text = text.replace(/\b[A-Z0-9]{2,}\b/g, " ")
@@ -574,7 +578,7 @@ function cleanNote(text: string) {
     .replace(/->/g, " ")
     .replace(/[→⇒]/g, " ")
   const parts = stripped
-    .split(/[\s、,，;；|/／]+/)
+    .split(/[\s、,，;；|/／與-]+/)
     .map((part) => part.trim())
     .filter((part) => part && !NOTE_NOISE.test(part))
   const unique = [...new Set(parts)]
