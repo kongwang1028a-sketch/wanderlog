@@ -23,6 +23,7 @@ import {
   createAustriaCzech2010Trip,
 } from "@/lib/austria-czech-2010-trip"
 import { HAKONE_2011_TITLE, HAKONE_2011_TRIP_ID, createHakone2011Trip } from "@/lib/hakone-2011-trip"
+import { TOKYO_2016_FEB_TITLE, TOKYO_2016_FEB_TRIP_ID, createTokyo2016FebTrip } from "@/lib/tokyo-2016-feb-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
@@ -43,6 +44,7 @@ const JAPAN_2018_FOCUS_FLAG = "travel-footprints-japan-2018-focused"
 const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
 const AUSTRIA_CZECH_2010_FOCUS_FLAG = "travel-footprints-austria-czech-2010-focused"
 const HAKONE_2011_FOCUS_FLAG = "travel-footprints-hakone-2011-focused"
+const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -168,6 +170,7 @@ export function subscribeTrips(listener: () => void) {
   dropUnownedJapan2019FebTrip()
   ensureAustriaCzech2010Trip()
   ensureHakone2011Trip()
+  ensureTokyo2016FebTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -845,6 +848,56 @@ function ensureHakone2011Trip() {
   if (current && localStorage.getItem(HAKONE_2011_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(HAKONE_2011_FOCUS_FLAG, "1")
+  }
+}
+
+function sameTokyo2016FebTrip(trip: Trip) {
+  if (trip.id === TOKYO_2016_FEB_TRIP_ID) return true
+  return trip.title === TOKYO_2016_FEB_TITLE && trip.startDate === "2016-02-29"
+}
+
+function tokyo2016FebTripCurrent(trip: Trip) {
+  const ids = trip.stops.map((stop) => stop.cityId)
+  const flights = trip.flights.map((flight) => flight.aircraft)
+  return (
+    trip.title === TOKYO_2016_FEB_TITLE &&
+    trip.startDate === "2016-02-29" &&
+    trip.endDate === "2016-03-04" &&
+    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-tokyo" &&
+    flights.join(",") === "JL802,JL809" &&
+    trip.stays.some((stay) => stay.name.includes("秋葉原末広町")) &&
+    trip.notes.includes("實際是 2016") &&
+    trip.stops.some((stop) => stop.note?.includes("吉卜力"))
+  )
+}
+
+function ensureTokyo2016FebTrip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameTokyo2016FebTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !tokyo2016FebTripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(TOKYO_2016_FEB_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createTokyo2016FebTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        existing = [merged, ...existing.filter((trip) => !sameTokyo2016FebTrip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(TOKYO_2016_FEB_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(TOKYO_2016_FEB_FOCUS_FLAG, "1")
   }
 }
 
