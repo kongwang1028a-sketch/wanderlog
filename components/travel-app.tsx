@@ -20,6 +20,7 @@ import { TraceImportDialog, type TraceImport } from "@/components/trace-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
 import { createDemoTrips } from "@/lib/demo"
+import { publishActiveBook, reconcilePublishedBook, type LiveSyncResult } from "@/lib/live-sync"
 import { formatRange, isWholeMonth, isWholeYear, totalTravelDays } from "@/lib/format"
 import { blobToDataUrl } from "@/lib/images"
 import {
@@ -102,6 +103,7 @@ export function TravelApp() {
   const [year, setYear] = useState("all")
   const [query, setQuery] = useState("")
   const [toast, setToast] = useState<string | null>(null)
+  const [syncNote, setSyncNote] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [memoryOpen, setMemoryOpen] = useState(false)
@@ -119,25 +121,75 @@ export function TravelApp() {
     return `${prefix}:${cameraSeq.current}`
   }
 
+  function describeSync(result: LiveSyncResult) {
+    if (result === "failed") return "目前連不到共用紀錄，修改先留在這台。"
+    if (result === "pulled") return "已載入其他裝置上的修改。"
+    if (result === "skipped") return null
+    return "其他裝置打開這個網站，就看得到這裡的修改。"
+  }
+
+  async function syncPublished(bundle?: ExportBundle) {
+    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+    let staticBundle = bundle
+    if (!staticBundle) {
+      const response = await fetch(`${base}/data/footprints.json?v=2016-tokyo-feb`, { cache: "no-store" })
+      if (!response.ok) throw new Error("static")
+      const parsed = (await response.json()) as Partial<ExportBundle>
+      if (!parsed || !Array.isArray(parsed.trips)) throw new Error("static")
+      staticBundle = {
+        version: 1,
+        exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : "published",
+        trips: parsed.trips.filter(isTrip),
+        photos: [],
+      }
+    }
+    await applyPublishedFootprints({ ...staticBundle, photos: Array.isArray(bundle?.photos) ? bundle.photos : [] })
+    const result = await reconcilePublishedBook(staticBundle)
+    const note = describeSync(result)
+    if (note) setSyncNote(note)
+    if (result === "pushed") notify("這台改過的內容已送到其他裝置")
+    if (result === "pulled") notify("已更新為其他裝置改過的旅程")
+    if (result === "failed") notify("連不到共用紀錄，修改先留在這台")
+  }
+
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
-    void fetch(`${base}/data/footprints.json?v=2016-tokyo-feb`)
-      .then((response) => {
-        if (!response.ok) return null
-        return response.json() as Promise<Partial<ExportBundle>>
-      })
-      .then(async (parsed) => {
-        if (!parsed || !Array.isArray(parsed.trips)) return
-        await applyPublishedFootprints({
+    let cancel = false
+    void (async () => {
+      try {
+        const response = await fetch(`${base}/data/footprints.json?v=2016-tokyo-feb`, { cache: "no-store" })
+        if (!response.ok || cancel) return
+        const parsed = (await response.json()) as Partial<ExportBundle>
+        if (!parsed || !Array.isArray(parsed.trips) || cancel) return
+        const bundle: ExportBundle = {
           version: 1,
           exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : "published",
           trips: parsed.trips.filter(isTrip),
           photos: Array.isArray(parsed.photos) ? parsed.photos : [],
-        })
-      })
-      .catch(() => {
-        // The map still works from this browser when the public file is missing.
-      })
+        }
+        await applyPublishedFootprints(bundle)
+        if (cancel) return
+        const result = await reconcilePublishedBook(bundle)
+        if (cancel) return
+        const note = describeSync(result)
+        if (note) setSyncNote(note)
+        if (result === "pushed") notify("這台改過的內容已送到其他裝置")
+        if (result === "pulled") notify("已更新為其他裝置改過的旅程")
+        if (result === "failed") notify("連不到共用紀錄，修改先留在這台")
+      } catch {
+        if (!cancel) setSyncNote("目前連不到共用紀錄，修改先留在這台。")
+      }
+    })()
+    const onFocus = () => {
+      void syncPublished().catch(() => setSyncNote("目前連不到共用紀錄，修改先留在這台。"))
+    }
+    window.addEventListener("focus", onFocus)
+    return () => {
+      cancel = true
+      window.removeEventListener("focus", onFocus)
+    }
+    // notify is stable enough for this page-lifetime effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -351,12 +403,17 @@ export function TravelApp() {
       ...panelFrame(),
     })
     notify("已記下這趟旅程")
+    void publishActiveBook().then((result) => {
+      const note = describeSync(result)
+      if (note) setSyncNote(note)
+      if (result === "failed") notify("修改先留在這台，還沒送到其他裝置")
+    })
   }
 
   function askDelete(trip: Trip) {
     setConfirm({
       title: "刪除這趟旅程？",
-      body: `「${trip.title}」和它上傳的照片會從這台瀏覽器移除。雲端連結只是網址，不會刪到 Google 或 iCloud 裡的檔案。`,
+      body: `「${trip.title}」會從公開足跡移除，其他裝置打開這個網站後也看不到。雲端連結只是網址，不會刪到 Google 或 iCloud 裡的檔案。`,
       confirmLabel: "刪除",
       action: () => {
         void (async () => {
@@ -364,6 +421,11 @@ export function TravelApp() {
             if (photo.kind === "upload") await deletePhotoBlob(photo.id)
           }
           updateTrips((current) => current.filter((item) => item.id !== trip.id))
+          void publishActiveBook().then((result) => {
+            const note = describeSync(result)
+            if (note) setSyncNote(note)
+            if (result === "failed") notify("刪除先留在這台，還沒送到其他裝置")
+          })
           if (selectedTripId === trip.id) {
             setSelectedTripId(null)
             setFocusStopId(null)
@@ -413,6 +475,10 @@ export function TravelApp() {
       })
     }
     notify(`已加入 ${created.length} 趟旅程`)
+    void publishActiveBook().then((result) => {
+      const note = describeSync(result)
+      if (note) setSyncNote(note)
+    })
   }
 
   async function addTraces(drafts: TraceImport[]) {
@@ -471,6 +537,10 @@ export function TravelApp() {
     }
     const photoCount = created.reduce((total, trip) => total + trip.photos.length, 0)
     notify(photoCount > 0 ? `已加入 ${created.length} 趟旅程，並留下 ${photoCount} 張照片` : `已加入 ${created.length} 趟旅程`)
+    void publishActiveBook().then((result) => {
+      const note = describeSync(result)
+      if (note) setSyncNote(note)
+    })
   }
 
   function addDemo() {
@@ -494,6 +564,10 @@ export function TravelApp() {
       })
     }
     notify("已放入兩段示範旅程，可以改掉或刪除")
+    void publishActiveBook().then((result) => {
+      const note = describeSync(result)
+      if (note) setSyncNote(note)
+    })
   }
 
   async function bundleTrips(): Promise<ExportBundle> {
@@ -559,6 +633,10 @@ export function TravelApp() {
         return [...incoming.filter((trip) => !ids.has(trip.id)), ...current]
       })
       notify(`已匯入 ${incoming.length} 趟旅程`)
+      void publishActiveBook().then((result) => {
+        const note = describeSync(result)
+        if (note) setSyncNote(note)
+      })
     } catch {
       notify("這個檔案不是旅遊足跡的匯出檔")
     } finally {
@@ -703,6 +781,7 @@ export function TravelApp() {
                     </FilterChip>
                   ))}
                 </div>
+                {syncNote && <p className="text-xs leading-5 text-muted-foreground">{syncNote}</p>}
                 <Button type="button" variant="outline" className="w-full" onClick={() => setMemoryOpen(true)}>
                   <ListPlus />
                   一次補上很多趟
@@ -930,16 +1009,13 @@ export function TravelApp() {
           <DialogHeader>
             <DialogTitle>讓別人看到我的旅程</DialogTitle>
             <DialogDescription>
-              別人打開網站時會看到「公開足跡」。這本來自專案裡的 public/data/footprints.json。你這台裝置上的其他足跡本仍只留在這台瀏覽器。
+              在這個網站改標題、行程或刪掉一筆，其他裝置打開同一個網址就會看到。另外建立的足跡本仍只留在這台裝置。上傳的照片檔也不會跟著到別的裝置。
             </DialogDescription>
           </DialogHeader>
           {shareOpen && <ShareLinkNotice />}
-          <ol className="list-decimal space-y-1 pl-5 text-sm leading-6 text-muted-foreground">
-            <li>按「下載公開足跡」，存成 footprints.json。</li>
-            <li>用這個檔案覆蓋專案裡的 public/data/footprints.json。</li>
-            <li>推上 GitHub 之後，到 Settings → Pages，Source 選 GitHub Actions。</li>
-            <li>把公開網址傳給朋友。朋友重新整理就能看到這些旅程。</li>
-          </ol>
+          <p className="text-sm leading-6 text-muted-foreground">
+            改完之後不用再下載檔案。另一支手機或電腦打開同一個網站，就會看到你剛改的標題和行程。
+          </p>
           <div className="space-y-2">
             <p className="font-medium">這台裝置上的足跡本</p>
             <p className="text-xs leading-5 text-muted-foreground">
@@ -1035,7 +1111,7 @@ function ShareLinkNotice() {
       <p className="break-all rounded-xl bg-secondary px-3 py-2 text-xs">{origin}</p>
       {localOnly && (
         <p className="text-xs leading-5 text-muted-foreground">
-          這個網址現在只在這台電腦上。朋友要從自己的手機看到你的旅程，需要先把 footprints.json 放進專案，再發布到 GitHub Pages。
+          這個網址現在只在這台電腦上。手機要看同一本足跡，請打開已經發布的網站。
         </p>
       )}
     </div>

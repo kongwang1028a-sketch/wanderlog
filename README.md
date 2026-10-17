@@ -33,19 +33,15 @@ npm run dev -- -H 0.0.0.0 -p 43123
 
 ## 讓別人看到我的旅程
 
-`public/data/footprints.json` 是網站上的公開足跡。別人打開網址時會看到這份檔案裡的旅程。你瀏覽器裡另外建立的足跡本不會自動上傳。
+公開網站上的「公開足跡」會跟其他裝置共用。在網頁裡改標題、行程或刪掉一筆之後，另一支手機或電腦打開同一個網址就看得到。另外建立的足跡本，以及上傳的照片檔，仍只留在原本那台裝置。
 
-1. 在網站按「分享」，再按「下載公開足跡」。
-2. 用下載的 `footprints.json` 覆蓋 `public/data/footprints.json`。
-3. 提交並推上 GitHub 的 `main`。
-4. 到該存放庫的 Settings → Pages → Build and deployment，Source 選 GitHub Actions。
-5. Actions 完成後，網址是 `https://你的帳號.github.io/存放庫名稱/`。存放庫名稱若是 `帳號.github.io`，網址則是 `https://帳號.github.io/`。
+`public/data/footprints.json` 是第一次打開時的底稿。你在網頁上改過的內容會另外記住，不會被這份舊檔蓋掉。
 
 GitHub Pages 是靜態網頁，公開網址不使用進入密碼。存放庫需要是 Public，免費方案才會提供 Pages。
 
 ## 放到 GitHub Pages
 
-上面的步驟會一併把網站發布到 GitHub Pages。公開檔已經包含美加極光海陸旅行團，以及橫濱、鎌倉。你之後新加的旅程，要再下載一次公開足跡並覆蓋檔案，朋友重新整理才看得到。
+GitHub Pages 會把網站發布出去。公開網址不使用進入密碼，存放庫需要是 Public。在網頁上改過的旅程會出現在其他裝置，不用再把 footprints.json 下載回來覆蓋。
 
 ## 放到 Vercel
 

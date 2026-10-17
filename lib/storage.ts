@@ -5,18 +5,15 @@ import { JAPAN_DEC_TITLE, JAPAN_DEC_TRIP_ID, createJapanDecemberTrip } from "@/l
 import { TOKYO_MAY_TITLE, TOKYO_MAY_TRIP_ID, createTokyoMayTrip } from "@/lib/tokyo-may-trip"
 import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import {
-  GERMANY_2017_TITLE,
   GERMANY_2017_TRIP_ID,
-  JAPAN_JUN_2023_TITLE,
   JAPAN_JUN_2023_TRIP_ID,
-  RUSSIA_2018_TITLE,
   RUSSIA_2018_TRIP_ID,
   createGermany2017Trip,
   createJapanJun2023Trip,
   createRussia2018Trip,
 } from "@/lib/outline-trips"
-import { JAPAN_2018_TITLE, JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
-import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
+import { JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
+import { JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
 import {
   AUSTRIA_CZECH_2010_TITLE,
   AUSTRIA_CZECH_2010_TRIP_ID,
@@ -45,22 +42,13 @@ const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
 const AUSTRIA_CZECH_2010_FOCUS_FLAG = "travel-footprints-austria-czech-2010-focused"
 const HAKONE_2011_FOCUS_FLAG = "travel-footprints-hakone-2011-focused"
 const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
-const AURORA_PORTS = [
-  "us-seattle",
-  "ca-inside-passage",
-  "us-juneau",
-  "us-skagway",
-  "us-dawes",
-  "us-ketchikan",
-  "ca-vancouver",
-  "ca-yellowknife",
-]
 
 let pendingAuroraFocus: string | null = null
 let createdBookThisPage = false
 
 export const PUBLISHED_BOOK_ID = "published-footprints"
 const PUBLISHED_REVISION_KEY = "travel-footprints-published-at"
+export const LIVE_EDITED_AT_KEY = "travel-footprints-live-edited-at"
 
 export function peekAuroraFocus() {
   return pendingAuroraFocus
@@ -290,31 +278,17 @@ function sameAuroraTrip(trip: Trip) {
   return trip.id === AURORA_TRIP_ID || trip.title.trim() === AURORA_TITLE
 }
 
-function auroraTripComplete(trip: Trip) {
-  const ids = new Set(trip.stops.map((stop) => stop.cityId))
-  return AURORA_PORTS.every((id) => ids.has(id))
-}
-
 function ensureAuroraTrip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameAuroraTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !auroraTripComplete(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(AURORA_SEED_KEY) !== "1"
     if (current || canInsert) {
       const created = createAuroraTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              flights: current.flights ?? [],
-              notes: current.notes?.includes("換日線") ? current.notes : created.notes,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         existing = [merged, ...existing.filter((trip) => !sameAuroraTrip(trip))]
         writeTrips(existing)
         localStorage.setItem(AURORA_SEED_KEY, "1")
@@ -337,39 +311,17 @@ function sameYokohamaTrip(trip: Trip) {
   return trip.startDate === "2026-01-17" && trip.stops.some((stop) => stop.cityId === "jp-yokohama")
 }
 
-function yokohamaTripCurrent(trip: Trip) {
-  const ids = new Set(trip.stops.map((stop) => stop.cityId))
-  const flights = trip.flights.map((flight) => `${flight.aircraft} ${flight.route}`).join(" ")
-  const stays = trip.stays.map((stay) => stay.name).join(" ")
-  return (
-    ids.has("jp-yokohama") &&
-    ids.has("jp-kamakura") &&
-    flights.includes("JL96") &&
-    flights.includes("JL99") &&
-    stays.includes("希爾頓") &&
-    trip.startDate === "2026-01-17" &&
-    trip.endDate === "2026-01-20"
-  )
-}
-
 function ensureYokohamaTrip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameYokohamaTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !yokohamaTripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(YOKOHAMA_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createYokohamaTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         if (merged.title !== YOKOHAMA_TITLE) merged.title = YOKOHAMA_TITLE
         existing = [merged, ...existing.filter((trip) => !sameYokohamaTrip(trip))]
         writeTrips(existing)
@@ -389,40 +341,17 @@ function sameFukuokaTrip(trip: Trip) {
   return trip.startDate === "2025-10-23" && trip.stops.some((stop) => stop.cityId === "jp-kitakyushu")
 }
 
-function fukuokaTripCurrent(trip: Trip) {
-  const ids = new Set(trip.stops.map((stop) => stop.cityId))
-  const flights = trip.flights.map((flight) => `${flight.aircraft} ${flight.route}`).join(" ")
-  const stays = trip.stays.map((stay) => stay.name).join(" ")
-  return (
-    ids.has("jp-fukuoka") &&
-    ids.has("jp-kitakyushu") &&
-    flights.includes("BR106") &&
-    flights.includes("JX841") &&
-    stays.includes("Blossom") &&
-    stays.includes("REI") &&
-    trip.startDate === "2025-10-23" &&
-    trip.endDate === "2025-10-26"
-  )
-}
-
 function ensureFukuokaTrip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameFukuokaTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !fukuokaTripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(FUKUOKA_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createFukuokaTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         if (merged.title !== FUKUOKA_TITLE) merged.title = FUKUOKA_TITLE
         existing = [merged, ...existing.filter((trip) => !sameFukuokaTrip(trip))]
         writeTrips(existing)
@@ -463,19 +392,12 @@ function ensureKansaiTrip() {
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameKansaiTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !kansaiTripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(KANSAI_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createKansaiTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         if (merged.title !== KANSAI_TITLE) merged.title = KANSAI_TITLE
         existing = [merged, ...existing.filter((trip) => !sameKansaiTrip(trip))]
         writeTrips(existing)
@@ -506,37 +428,16 @@ function sameJapanJun2023Trip(trip: Trip) {
   return trip.startDate === "2023-06-02" && trip.title.includes("日本")
 }
 
-function japanJun2023TripCurrent(trip: Trip) {
-  return (
-    trip.title === JAPAN_JUN_2023_TITLE &&
-    trip.startDate === "2023-06-02" &&
-    trip.endDate === "2023-06-05" &&
-    trip.stops.length === 1 &&
-    trip.stops[0]?.name === "日本" &&
-    trip.stops[0]?.cityId === undefined &&
-    trip.flights.length === 0 &&
-    trip.stays.length === 0 &&
-    trip.notes.includes("詳細行程還沒找到")
-  )
-}
-
 function ensureJapanJun2023Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameJapanJun2023Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !japanJun2023TripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(JAPAN_JUN_2023_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createJapanJun2023Trip()
-      const merged: Trip = current
-        ? {
-            ...created,
-            id: current.id,
-            photos: current.photos,
-            createdAt: current.createdAt,
-          }
-        : created
+      const merged = created
       existing = [merged, ...existing.filter((trip) => !sameJapanJun2023Trip(trip))]
       writeTrips(existing)
       current = merged
@@ -553,39 +454,16 @@ function sameGermany2017Trip(trip: Trip) {
   return trip.title.includes("2017") && trip.title.includes("德國")
 }
 
-function germany2017TripCurrent(trip: Trip) {
-  return (
-    trip.title === GERMANY_2017_TITLE &&
-    trip.startDate === "2017-01-01" &&
-    trip.endDate === "2017-12-31" &&
-    trip.stops.length === 1 &&
-    trip.stops[0]?.name === "德國" &&
-    trip.stops[0]?.countryCode === "DE" &&
-    trip.stops[0]?.cityId === undefined &&
-    trip.stops[0]?.date === undefined &&
-    trip.flights.length === 0 &&
-    trip.stays.length === 0 &&
-    trip.notes.includes("詳細行程還沒找到")
-  )
-}
-
 function ensureGermany2017Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameGermany2017Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !germany2017TripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(GERMANY_2017_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createGermany2017Trip()
-      const merged: Trip = current
-        ? {
-            ...created,
-            id: current.id,
-            photos: current.photos,
-            createdAt: current.createdAt,
-          }
-        : created
+      const merged = created
       existing = [merged, ...existing.filter((trip) => !sameGermany2017Trip(trip))]
       writeTrips(existing)
       current = merged
@@ -602,40 +480,17 @@ function sameJapan2019Trip(trip: Trip) {
   return trip.startDate === "2019-09-28" && trip.title.includes("日本")
 }
 
-function japan2019TripCurrent(trip: Trip) {
-  const ids = trip.stops.map((stop) => stop.cityId)
-  const notes = trip.stops.map((stop) => stop.note ?? "").join("\n")
-  return (
-    trip.title === JAPAN_2019_TITLE &&
-    trip.startDate === "2019-09-28" &&
-    trip.endDate === "2019-10-05" &&
-    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-osaka,jp-kobe,jp-osaka" &&
-    notes.includes("晴空塔") &&
-    notes.includes("石田屋") &&
-    notes.includes("關西空港") &&
-    trip.flights.length === 0 &&
-    trip.stays.length === 0
-  )
-}
-
 function ensureJapan2019Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameJapan2019Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !japan2019TripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(JAPAN_2019_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createJapan2019Trip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         existing = [merged, ...existing.filter((trip) => !sameJapan2019Trip(trip))]
         writeTrips(existing)
         current = merged
@@ -653,39 +508,16 @@ function sameRussia2018Trip(trip: Trip) {
   return trip.title.includes("2018") && trip.title.includes("俄羅斯")
 }
 
-function russia2018TripCurrent(trip: Trip) {
-  return (
-    trip.title === RUSSIA_2018_TITLE &&
-    trip.startDate === "2018-01-01" &&
-    trip.endDate === "2018-12-31" &&
-    trip.stops.length === 1 &&
-    trip.stops[0]?.name === "俄羅斯" &&
-    trip.stops[0]?.countryCode === "RU" &&
-    trip.stops[0]?.cityId === undefined &&
-    trip.stops[0]?.date === undefined &&
-    trip.flights.length === 0 &&
-    trip.stays.length === 0 &&
-    trip.notes.includes("詳細行程還沒找到")
-  )
-}
-
 function ensureRussia2018Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameRussia2018Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !russia2018TripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(RUSSIA_2018_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createRussia2018Trip()
-      const merged: Trip = current
-        ? {
-            ...created,
-            id: current.id,
-            photos: current.photos,
-            createdAt: current.createdAt,
-          }
-        : created
+      const merged = created
       existing = [merged, ...existing.filter((trip) => !sameRussia2018Trip(trip))]
       writeTrips(existing)
       current = merged
@@ -702,27 +534,12 @@ function sameJapan2018Trip(trip: Trip) {
   return trip.title.includes("2018") && trip.stops.length === 1 && trip.stops[0]?.name === "日本"
 }
 
-function japan2018TripCurrent(trip: Trip) {
-  const ids = trip.stops.map((stop) => stop.cityId)
-  return (
-    trip.title === JAPAN_2018_TITLE &&
-    trip.startDate === "2018-10-28" &&
-    trip.endDate === "2018-11-02" &&
-    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-kawagoe,jp-tokyo" &&
-    trip.stays.some((stay) => stay.name.includes("Buku Tokyo")) &&
-    trip.flights.length === 0 &&
-    trip.notes.includes("沒有航班編號") &&
-    trip.stops.some((stop) => stop.note?.includes("柚屋")) &&
-    trip.stops.some((stop) => stop.note?.includes("品川水族館"))
-  )
-}
-
 function ensureJapan2018Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameJapan2018Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !japan2018TripCurrent(current)) {
+  if (!current) {
     const canInsert =
       !current &&
       localStorage.getItem(JAPAN_2018_FOCUS_FLAG) !== "1" &&
@@ -730,14 +547,7 @@ function ensureJapan2018Trip() {
     if (current || canInsert) {
       const created = createJapan2018Trip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         existing = [merged, ...existing.filter((trip) => !sameJapan2018Trip(trip))]
         writeTrips(existing)
         current = merged
@@ -756,39 +566,17 @@ function sameAustriaCzech2010Trip(trip: Trip) {
   return trip.title === AUSTRIA_CZECH_2010_TITLE && trip.startDate === "2010-07-31"
 }
 
-function austriaCzech2010TripCurrent(trip: Trip) {
-  return (
-    trip.title === AUSTRIA_CZECH_2010_TITLE &&
-    trip.startDate === "2010-07-31" &&
-    trip.endDate === "2010-07-31" &&
-    trip.stops.length === 1 &&
-    trip.stops[0]?.cityId === "cz-prague" &&
-    trip.stops[0]?.name === "布拉格" &&
-    trip.flights.length === 0 &&
-    trip.stays.length === 0 &&
-    trip.notes.includes("只有一張照片") &&
-    trip.notes.includes("奧地利沒有出現城市")
-  )
-}
-
 function ensureAustriaCzech2010Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameAustriaCzech2010Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !austriaCzech2010TripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(AUSTRIA_CZECH_2010_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createAustriaCzech2010Trip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         existing = [merged, ...existing.filter((trip) => !sameAustriaCzech2010Trip(trip))]
         writeTrips(existing)
         current = merged
@@ -806,39 +594,17 @@ function sameHakone2011Trip(trip: Trip) {
   return trip.title === HAKONE_2011_TITLE && trip.startDate === "2011-01-26"
 }
 
-function hakone2011TripCurrent(trip: Trip) {
-  return (
-    trip.title === HAKONE_2011_TITLE &&
-    trip.startDate === "2011-01-26" &&
-    trip.endDate === "2011-01-26" &&
-    trip.stops.length === 1 &&
-    trip.stops[0]?.cityId === "jp-hakone" &&
-    trip.stops[0]?.note?.includes("大涌谷") === true &&
-    trip.flights.length === 0 &&
-    trip.stays.length === 0 &&
-    trip.notes.includes("只有一張照片") &&
-    trip.notes.includes("SANY1209_Original.JPG")
-  )
-}
-
 function ensureHakone2011Trip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameHakone2011Trip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !hakone2011TripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(HAKONE_2011_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createHakone2011Trip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         existing = [merged, ...existing.filter((trip) => !sameHakone2011Trip(trip))]
         writeTrips(existing)
         current = merged
@@ -856,39 +622,17 @@ function sameTokyo2016FebTrip(trip: Trip) {
   return trip.title === TOKYO_2016_FEB_TITLE && trip.startDate === "2016-02-29"
 }
 
-function tokyo2016FebTripCurrent(trip: Trip) {
-  const ids = trip.stops.map((stop) => stop.cityId)
-  const flights = trip.flights.map((flight) => flight.aircraft)
-  return (
-    trip.title === TOKYO_2016_FEB_TITLE &&
-    trip.startDate === "2016-02-29" &&
-    trip.endDate === "2016-03-04" &&
-    ids.join(",") === "jp-tokyo,jp-tokyo-disney,jp-tokyo" &&
-    flights.join(",") === "JL802,JL809" &&
-    trip.stays.some((stay) => stay.name.includes("秋葉原末広町")) &&
-    trip.notes.includes("實際是 2016") &&
-    trip.stops.some((stop) => stop.note?.includes("吉卜力"))
-  )
-}
-
 function ensureTokyo2016FebTrip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameTokyo2016FebTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !tokyo2016FebTripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(TOKYO_2016_FEB_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createTokyo2016FebTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         existing = [merged, ...existing.filter((trip) => !sameTokyo2016FebTrip(trip))]
         writeTrips(existing)
         current = merged
@@ -936,37 +680,17 @@ function sameTokyoMayTrip(trip: Trip) {
   return trip.startDate === "2024-05-18" && trip.stops.some((stop) => stop.cityId === "jp-tokyo-disney")
 }
 
-function tokyoMayTripCurrent(trip: Trip) {
-  const ids = trip.stops.map((stop) => stop.cityId)
-  const stays = trip.stays.map((stay) => stay.name).join(" ")
-  return (
-    ids[0] === "jp-tokyo" &&
-    ids.includes("jp-tokyo-disney") &&
-    stays.includes("東美滿如家") &&
-    trip.startDate === "2024-05-18" &&
-    trip.endDate === "2024-05-22" &&
-    trip.stops.some((stop) => stop.note?.includes("哈利波特"))
-  )
-}
-
 function ensureTokyoMayTrip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameTokyoMayTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !tokyoMayTripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(TOKYO_MAY_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createTokyoMayTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         if (merged.title !== TOKYO_MAY_TITLE) merged.title = TOKYO_MAY_TITLE
         existing = [merged, ...existing.filter((trip) => !sameTokyoMayTrip(trip))]
         writeTrips(existing)
@@ -986,41 +710,17 @@ function sameJapanDecemberTrip(trip: Trip) {
   return trip.startDate === "2024-12-14" && trip.stops.some((stop) => stop.cityId === "jp-kyoto")
 }
 
-function japanDecemberTripCurrent(trip: Trip) {
-  const ids = new Set(trip.stops.map((stop) => stop.cityId))
-  const stays = trip.stays.map((stay) => stay.name).join(" ")
-  return (
-    ids.has("jp-kyoto") &&
-    ids.has("jp-tokyo-disney") &&
-    ids.has("jp-kawaguchiko") &&
-    stays.includes("京都大倉") &&
-    stays.includes("迪士尼樂園飯店") &&
-    stays.includes("大使") &&
-    stays.includes("富士景觀") &&
-    stays.includes("拉維斯塔") &&
-    trip.startDate === "2024-12-14" &&
-    trip.endDate === "2024-12-21"
-  )
-}
-
 function ensureJapanDecemberTrip() {
   if (typeof localStorage === "undefined") return
   let existing = getTripSnapshot().trips
   const index = existing.findIndex(sameJapanDecemberTrip)
   let current = index >= 0 ? existing[index] : undefined
-  if (!current || !japanDecemberTripCurrent(current)) {
+  if (!current) {
     const canInsert = !current && localStorage.getItem(JAPAN_DEC_FOCUS_FLAG) !== "1"
     if (current || canInsert) {
       const created = createJapanDecemberTrip()
       if (created) {
-        const merged: Trip = current
-          ? {
-              ...created,
-              id: current.id,
-              photos: current.photos,
-              createdAt: current.createdAt,
-            }
-          : created
+        const merged = created
         if (merged.title !== JAPAN_DEC_TITLE) merged.title = JAPAN_DEC_TITLE
         existing = [merged, ...existing.filter((trip) => !sameJapanDecemberTrip(trip))]
         writeTrips(existing)
@@ -1138,6 +838,44 @@ function isPhoto(value: unknown): value is PhotoRef {
   return typeof photo.id === "string" && typeof photo.kind === "string"
 }
 
+export function readPublishedTrips() {
+  if (typeof localStorage === "undefined") return null
+  const raw = localStorage.getItem(tripStorageKey(PUBLISHED_BOOK_ID))
+  if (raw === null) return null
+  return parseTrips(raw)
+}
+
+export function readLiveEditedAt() {
+  if (typeof localStorage === "undefined") return 0
+  const raw = localStorage.getItem(LIVE_EDITED_AT_KEY)
+  const parsed = raw ? Date.parse(raw) : Number.NaN
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+export function rememberLiveRevision(revision: string) {
+  if (typeof localStorage === "undefined" || !revision) return
+  localStorage.setItem(PUBLISHED_REVISION_KEY, revision)
+  localStorage.setItem(LIVE_EDITED_AT_KEY, revision)
+}
+
+export function isPublishedBookActive() {
+  return readBookStore()?.activeId === PUBLISHED_BOOK_ID
+}
+
+export function writePublishedTrips(trips: Trip[], revision: string) {
+  if (typeof localStorage === "undefined") return
+  ensureBooks()
+  const store = readBookStore()
+  if (!store) return
+  if (!store.books.some((book) => book.id === PUBLISHED_BOOK_ID)) {
+    store.books.unshift({ id: PUBLISHED_BOOK_ID, name: "公開足跡" })
+    localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
+  }
+  localStorage.setItem(tripStorageKey(PUBLISHED_BOOK_ID), JSON.stringify(trips))
+  rememberLiveRevision(revision)
+  invalidateStores()
+}
+
 export function isTrip(value: unknown): value is Trip {
   if (!value || typeof value !== "object") return false
   const trip = value as Trip
@@ -1169,8 +907,15 @@ export async function applyPublishedFootprints(bundle: ExportBundle) {
 
   const revision = bundle.exportedAt || "published"
   const missing = localStorage.getItem(tripStorageKey(PUBLISHED_BOOK_ID)) === null
-  const changed = localStorage.getItem(PUBLISHED_REVISION_KEY) !== revision
-  if (changed || missing) {
+  const storedRevision = localStorage.getItem(PUBLISHED_REVISION_KEY)
+  const incomingAt = Date.parse(revision)
+  const storedAt = storedRevision ? Date.parse(storedRevision) : Number.NaN
+  const newer =
+    storedRevision === null ||
+    Number.isNaN(storedAt) ||
+    (!Number.isNaN(incomingAt) && incomingAt > storedAt)
+  const shouldWrite = missing || newer
+  if (shouldWrite) {
     for (const photo of bundle.photos) {
       if (!photo.id || !photo.dataUrl?.startsWith("data:")) continue
       await savePhotoBlob(photo.id, dataUrlToBlob(photo.dataUrl))
@@ -1192,7 +937,7 @@ export async function applyPublishedFootprints(bundle: ExportBundle) {
     localStorage.setItem(BOOKS_KEY, JSON.stringify(store))
     invalidateStores()
   }
-  return { applied: changed || missing, switched }
+  return { applied: shouldWrite, switched }
 }
 
 export async function importBundle(bundle: ExportBundle) {
