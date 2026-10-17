@@ -59,7 +59,7 @@ type WorldMapProps = {
 function flagIcon(lines: string[], active: boolean, count: number, side: "left" | "right") {
   const badge = count > 1 ? `<span class="flag-count">${count}</span>` : ""
   const pennant = lines.map((line) => `<span class="flag-year">${line}</span>`).join("")
-  const width = Math.max(44, ...lines.map((line) => 16 + line.length * 7))
+  const width = Math.max(52, ...lines.map((line) => 18 + line.length * 8))
   const height = 28 + lines.length * 16
   const anchorX = side === "left" ? width - 8 : 8
   return L.divIcon({

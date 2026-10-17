@@ -12,7 +12,7 @@ assert.deepEqual(
     { date: "2019-09-28", startDate: "2019-09-28" },
     { date: "2024-05-18", startDate: "2024-05-18" },
   ]),
-  ["16", "18", "19", "24"],
+  ["2016", "2018", "2019", "2024"],
 )
 assert.deepEqual(
   pinYearLines(
@@ -22,9 +22,19 @@ assert.deepEqual(
     ],
     8,
   ),
-  ["16", "19"],
+  ["2016", "2019"],
 )
-assert.deepEqual(pinYearLines([{ date: "2024-05-18", startDate: "2024-05-18" }], 3), ["24"])
+assert.deepEqual(pinYearLines([{ date: "2026-01-17", startDate: "2026-01-17" }], 3), ["2026"])
+assert.deepEqual(
+  pinYearLines(
+    [
+      { date: "2016-02-29", startDate: "2016-02-29" },
+      { date: "2024-05-18", startDate: "2024-05-18" },
+    ],
+    2,
+  ),
+  ["2016", "2024"],
+)
 
 const bundle = JSON.parse(readFileSync(new URL("../public/data/footprints.json", import.meta.url), "utf8")) as {
   trips: Trip[]
@@ -34,7 +44,7 @@ const tokyo = pins.find((pin) => pin.name === "東京")
 const hakone = pins.find((pin) => pin.name === "箱根")
 const prague = pins.find((pin) => pin.name === "布拉格")
 assert.ok(tokyo && hakone && prague)
-assert.deepEqual(pinYearLines(tokyo.visits, 8), ["16", "18", "19", "24"])
+assert.deepEqual(pinYearLines(tokyo.visits, 8), ["2016", "2018", "2019", "2024"])
 assert.deepEqual(pinYearLines(hakone.visits, 8), ["2011"])
 assert.deepEqual(pinYearLines(prague.visits, 8), ["2010"])
 for (const pin of pins) {
