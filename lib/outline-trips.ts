@@ -4,6 +4,8 @@ export const JAPAN_JUN_2023_TRIP_ID = "japan-jun-2023"
 export const JAPAN_JUN_2023_TITLE = "2023年6月 日本"
 export const GERMANY_2017_TRIP_ID = "germany-2017"
 export const GERMANY_2017_TITLE = "2017年 德國"
+export const RUSSIA_2018_TRIP_ID = "russia-2018"
+export const RUSSIA_2018_TITLE = "2018年 俄羅斯"
 
 const PENDING = "詳細行程還沒找到。"
 
@@ -55,5 +57,30 @@ export function createGermany2017Trip(): Trip {
     stays: [],
     photos: [],
     createdAt: "2017-01-01T00:00:00.000Z",
+  }
+}
+
+export function createRussia2018Trip(): Trip {
+  return {
+    id: RUSSIA_2018_TRIP_ID,
+    title: RUSSIA_2018_TITLE,
+    startDate: "2018-01-01",
+    endDate: "2018-12-31",
+    notes: "詳細行程還沒找到，先記 2018 年到過俄羅斯。",
+    stops: [
+      {
+        id: "russia-2018-stop",
+        name: "俄羅斯",
+        country: "俄羅斯",
+        countryCode: "RU",
+        lat: 66.417,
+        lng: 94.25,
+        note: PENDING,
+      },
+    ],
+    flights: [],
+    stays: [],
+    photos: [],
+    createdAt: "2018-01-01T00:00:00.000Z",
   }
 }

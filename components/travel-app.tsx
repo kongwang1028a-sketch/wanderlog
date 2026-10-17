@@ -122,7 +122,7 @@ export function TravelApp() {
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
-    void fetch(`${base}/data/footprints.json?v=2019-japan`)
+    void fetch(`${base}/data/footprints.json?v=2018-russia`)
       .then((response) => {
         if (!response.ok) return null
         return response.json() as Promise<Partial<ExportBundle>>

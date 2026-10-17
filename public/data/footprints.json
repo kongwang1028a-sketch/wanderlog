@@ -1,7 +1,29 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-17T13:05:00.000Z",
+  "exportedAt": "2026-10-17T13:10:00.000Z",
   "trips": [
+    {
+      "id": "russia-2018",
+      "title": "2018年 俄羅斯",
+      "startDate": "2018-01-01",
+      "endDate": "2018-12-31",
+      "notes": "詳細行程還沒找到，先記 2018 年到過俄羅斯。",
+      "stops": [
+        {
+          "id": "russia-2018-stop",
+          "name": "俄羅斯",
+          "country": "俄羅斯",
+          "countryCode": "RU",
+          "lat": 66.417,
+          "lng": 94.25,
+          "note": "詳細行程還沒找到。"
+        }
+      ],
+      "flights": [],
+      "stays": [],
+      "photos": [],
+      "createdAt": "2018-01-01T00:00:00.000Z"
+    },
     {
       "id": "japan-2019",
       "title": "2019年 日本",

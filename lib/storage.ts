@@ -9,8 +9,11 @@ import {
   GERMANY_2017_TRIP_ID,
   JAPAN_JUN_2023_TITLE,
   JAPAN_JUN_2023_TRIP_ID,
+  RUSSIA_2018_TITLE,
+  RUSSIA_2018_TRIP_ID,
   createGermany2017Trip,
   createJapanJun2023Trip,
+  createRussia2018Trip,
 } from "@/lib/outline-trips"
 import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
 import { dataUrlToBlob } from "@/lib/images"
@@ -28,6 +31,7 @@ const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const JAPAN_JUN_2023_FOCUS_FLAG = "travel-footprints-japan-jun-2023-focused"
 const GERMANY_2017_FOCUS_FLAG = "travel-footprints-germany-2017-focused"
 const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
+const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -148,6 +152,7 @@ export function subscribeTrips(listener: () => void) {
   ensureJapanJun2023Trip()
   ensureGermany2017Trip()
   ensureJapan2019Trip()
+  ensureRussia2018Trip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -622,6 +627,55 @@ function ensureJapan2019Trip() {
   if (current && localStorage.getItem(JAPAN_2019_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(JAPAN_2019_FOCUS_FLAG, "1")
+  }
+}
+
+function sameRussia2018Trip(trip: Trip) {
+  if (trip.id === RUSSIA_2018_TRIP_ID) return true
+  return trip.title.includes("2018") && trip.title.includes("俄羅斯")
+}
+
+function russia2018TripCurrent(trip: Trip) {
+  return (
+    trip.title === RUSSIA_2018_TITLE &&
+    trip.startDate === "2018-01-01" &&
+    trip.endDate === "2018-12-31" &&
+    trip.stops.length === 1 &&
+    trip.stops[0]?.name === "俄羅斯" &&
+    trip.stops[0]?.countryCode === "RU" &&
+    trip.stops[0]?.cityId === undefined &&
+    trip.stops[0]?.date === undefined &&
+    trip.flights.length === 0 &&
+    trip.stays.length === 0 &&
+    trip.notes.includes("詳細行程還沒找到")
+  )
+}
+
+function ensureRussia2018Trip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameRussia2018Trip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !russia2018TripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(RUSSIA_2018_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createRussia2018Trip()
+      const merged: Trip = current
+        ? {
+            ...created,
+            id: current.id,
+            photos: current.photos,
+            createdAt: current.createdAt,
+          }
+        : created
+      existing = [merged, ...existing.filter((trip) => !sameRussia2018Trip(trip))]
+      writeTrips(existing)
+      current = merged
+    }
+  }
+  if (current && localStorage.getItem(RUSSIA_2018_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(RUSSIA_2018_FOCUS_FLAG, "1")
   }
 }
 

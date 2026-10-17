@@ -53,6 +53,7 @@ const ISO_NUMERIC: Record<string, number> = {
   PH: 608,
   PL: 616,
   PT: 620,
+  RU: 643,
   SE: 752,
   SG: 702,
   TH: 764,
