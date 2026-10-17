@@ -1,7 +1,52 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-17T12:45:00.000Z",
+  "exportedAt": "2026-10-17T12:50:00.000Z",
   "trips": [
+    {
+      "id": "germany-2017",
+      "title": "2017年 德國",
+      "startDate": "2017-01-01",
+      "endDate": "2017-12-31",
+      "notes": "詳細行程還沒找到，先記 2017 年到過德國。",
+      "stops": [
+        {
+          "id": "germany-2017-stop",
+          "name": "德國",
+          "country": "德國",
+          "countryCode": "DE",
+          "lat": 51.163,
+          "lng": 10.447,
+          "note": "詳細行程還沒找到。"
+        }
+      ],
+      "flights": [],
+      "stays": [],
+      "photos": [],
+      "createdAt": "2017-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "japan-jun-2023",
+      "title": "2023年6月 日本",
+      "startDate": "2023-06-02",
+      "endDate": "2023-06-05",
+      "notes": "詳細行程還沒找到，先記 2023年6月2日至5日到過日本。",
+      "stops": [
+        {
+          "id": "japan-jun-2023-stop",
+          "name": "日本",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 39.3,
+          "lng": 141.1,
+          "date": "2023-06-02",
+          "note": "詳細行程還沒找到。"
+        }
+      ],
+      "flights": [],
+      "stays": [],
+      "photos": [],
+      "createdAt": "2023-06-01T00:00:00.000Z"
+    },
     {
       "id": "japan-dec-2024",
       "title": "2024年12月 日本",
