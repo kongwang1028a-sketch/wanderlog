@@ -3,6 +3,23 @@ import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
 const AURORA_SEED_KEY = "travel-footprints-seeded-aurora"
+const AURORA_FOCUS_FLAG = "travel-footprints-aurora-focused"
+const AURORA_PORTS = [
+  "us-seattle",
+  "ca-inside-passage",
+  "us-juneau",
+  "us-skagway",
+  "us-dawes",
+  "us-ketchikan",
+  "ca-vancouver",
+  "ca-yellowknife",
+]
+
+let pendingAuroraFocus: string | null = null
+
+export function peekAuroraFocus() {
+  return pendingAuroraFocus
+}
 
 const LEGACY_TRIP_KEY = "travel-footprints-v1"
 const BOOKS_KEY = "travel-footprints-books"
@@ -208,18 +225,48 @@ export function updateTrips(updater: (current: Trip[]) => Trip[]) {
   writeTrips(updater(getTripSnapshot().trips))
 }
 
+function sameAuroraTrip(trip: Trip) {
+  return trip.id === AURORA_TRIP_ID || trip.title.trim() === AURORA_TITLE
+}
+
+function auroraTripComplete(trip: Trip) {
+  const ids = new Set(trip.stops.map((stop) => stop.cityId))
+  return AURORA_PORTS.every((id) => ids.has(id))
+}
+
 function ensureAuroraTrip() {
   if (typeof localStorage === "undefined") return
-  if (localStorage.getItem(AURORA_SEED_KEY)) return
-  const existing = getTripSnapshot().trips
-  if (existing.some((trip) => trip.id === AURORA_TRIP_ID || trip.title === AURORA_TITLE)) {
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameAuroraTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !auroraTripComplete(current)) {
+    const canInsert = !current && localStorage.getItem(AURORA_SEED_KEY) !== "1"
+    if (current || canInsert) {
+      const created = createAuroraTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              flights: current.flights ?? [],
+              notes: current.notes?.includes("換日線") ? current.notes : created.notes,
+              createdAt: current.createdAt,
+            }
+          : created
+        existing = [merged, ...existing.filter((trip) => !sameAuroraTrip(trip))]
+        writeTrips(existing)
+        localStorage.setItem(AURORA_SEED_KEY, "1")
+        current = merged
+      }
+    }
+  } else {
     localStorage.setItem(AURORA_SEED_KEY, "1")
-    return
   }
-  const trip = createAuroraTrip()
-  if (!trip) return
-  localStorage.setItem(AURORA_SEED_KEY, "1")
-  writeTrips([trip, ...existing])
+  if (current && localStorage.getItem(AURORA_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(AURORA_FOCUS_FLAG, "1")
+  }
 }
 
 function openDb() {

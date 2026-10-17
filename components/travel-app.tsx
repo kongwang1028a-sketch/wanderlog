@@ -41,6 +41,7 @@ import {
   getTripSnapshot,
   importBundle,
   isTrip,
+  peekAuroraFocus,
   removeBook,
   savePhotoBlob,
   subscribeBooks,
@@ -111,11 +112,18 @@ export function TravelApp() {
   const toastTimer = useRef<number | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
   const cameraSeq = useRef(0)
+  const [handledAuroraFocus, setHandledAuroraFocus] = useState<string | null>(null)
 
   function cameraToken(prefix: string) {
     cameraSeq.current += 1
     return `${prefix}:${cameraSeq.current}`
   }
+
+  useEffect(() => {
+    if (toast !== "已放上美加極光海陸旅行團") return
+    const timer = window.setTimeout(() => setToast(null), 3200)
+    return () => window.clearTimeout(timer)
+  }, [toast])
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -539,6 +547,28 @@ export function TravelApp() {
       maxZoom: 4,
     })
     setMobileView("map")
+  }
+
+  const auroraFocusId = peekAuroraFocus()
+  if (ready && auroraFocusId && handledAuroraFocus !== auroraFocusId) {
+    const aurora = trips.find((trip) => trip.id === auroraFocusId)
+    if (aurora) {
+      setHandledAuroraFocus(auroraFocusId)
+      setYear("all")
+      setQuery("")
+      setEditor(null)
+      setSelectedTripId(aurora.id)
+      setFocusStopId(aurora.stops[0]?.id ?? null)
+      setSelectedPinKey(null)
+      setMobileView("map")
+      setCamera({
+        kind: "bounds",
+        token: `aurora-focus:${aurora.id}`,
+        points: aurora.stops.map((stop) => [stop.lat, stop.lng]),
+        ...panelFrame(),
+      })
+      setToast("已放上美加極光海陸旅行團")
+    }
   }
 
   if (!ready) {
