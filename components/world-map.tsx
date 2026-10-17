@@ -14,6 +14,7 @@ import {
 import L from "leaflet"
 import type { Feature, FeatureCollection, Geometry } from "geojson"
 import { feature } from "topojson-client"
+import { splitPolygonsAtDateline } from "@/lib/antimeridian"
 import "leaflet/dist/leaflet.css"
 import { flagEmoji } from "@/lib/geo"
 import type { Pin } from "@/lib/types"
@@ -252,7 +253,19 @@ export default function WorldMap({
           topology as never,
           topology.objects.countries as never,
         ) as unknown as FeatureCollection<Geometry>
-        setCountries(collection)
+        setCountries({
+          type: "FeatureCollection",
+          features: collection.features.map((item) => {
+            if (item.geometry.type !== "Polygon" && item.geometry.type !== "MultiPolygon") return item
+            const polygons =
+              item.geometry.type === "Polygon" ? [item.geometry.coordinates] : item.geometry.coordinates
+            const split = splitPolygonsAtDateline(polygons as number[][][][])
+            return {
+              ...item,
+              geometry: { type: "MultiPolygon", coordinates: split },
+            }
+          }),
+        })
       })
       .catch(() => {
         // Flags and routes still work if the country shapes cannot load.
