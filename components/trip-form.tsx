@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ChevronDown, ChevronUp, ClipboardPaste, ImagePlus, Link2, Trash2, X } from "lucide-react"
+import { ChevronDown, ChevronUp, ClipboardPaste, ImagePlus, Link2, Plus, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,9 +10,10 @@ import { countryOptions, type City } from "@/lib/cities"
 import { detectPhotoKind, isHttpUrl, photoKindLabel } from "@/lib/format"
 import { nearestCity, searchCities, stopFromCity } from "@/lib/geo"
 import { parseItinerary } from "@/lib/itinerary"
+import { extractTripDetails } from "@/lib/lodging"
 import { compressImage } from "@/lib/images"
 import { getPhotoBlob } from "@/lib/storage"
-import type { PhotoRef, Stop, Trip } from "@/lib/types"
+import type { FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
 const MAX_UPLOADS = 24
 
@@ -54,6 +55,8 @@ export function TripForm({
   const [endDate, setEndDate] = useState(initial?.endDate ?? "")
   const [notes, setNotes] = useState(initial?.notes ?? "")
   const [stops, setStops] = useState<Stop[]>(initial?.stops ?? [])
+  const [flights, setFlights] = useState<FlightRecord[]>(initial?.flights ?? [])
+  const [stays, setStays] = useState<StayRecord[]>(initial?.stays ?? [])
   const [photos, setPhotos] = useState<PhotoRef[]>(initial?.photos ?? [])
   const [pending, setPending] = useState<PendingPhoto[]>([])
   const [removedIds, setRemovedIds] = useState<string[]>([])
@@ -261,6 +264,12 @@ export function TripForm({
       endDate,
       notes: notes.trim(),
       stops,
+      flights: flights
+        .map((flight) => ({ ...flight, aircraft: flight.aircraft.trim(), route: flight.route.trim() }))
+        .filter((flight) => flight.aircraft || flight.route),
+      stays: stays
+        .map((stay) => ({ ...stay, name: stay.name.trim() }))
+        .filter((stay) => stay.name),
       photos: [
         ...photos,
         ...pending.map((photo) => ({
@@ -305,9 +314,33 @@ export function TripForm({
     if (parsed.startDate) setStartDate(parsed.startDate)
     if (parsed.endDate) setEndDate(parsed.endDate)
     setStops(parsed.stops.map((stop) => stopFromCity(stop.city, stop.date, stop.note)))
+    const details = extractTripDetails(text)
+    if (details.flights.length > 0) {
+      setFlights((current) => {
+        const keys = new Set(current.map((flight) => `${flight.aircraft}|${flight.route}`))
+        const extra = details.flights
+          .filter((flight) => !keys.has(`${flight.aircraft}|${flight.route}`))
+          .map((flight) => ({ id: crypto.randomUUID(), aircraft: flight.aircraft, route: flight.route }))
+        return [...current, ...extra]
+      })
+    }
+    if (details.stays.length > 0) {
+      setStays((current) => {
+        const names = new Set(current.map((stay) => stay.name))
+        const extra = details.stays
+          .filter((stay) => !names.has(stay.name))
+          .map((stay) => ({ id: crypto.randomUUID(), name: stay.name }))
+        return [...current, ...extra]
+      })
+    }
     if (!notes.trim()) setNotes(text.slice(0, 2000))
     const replaced = hadStops ? "原本的停留點已換成這份大綱。" : ""
-    setImportSummary(replaced ? `${parsed.summary}。${replaced}` : parsed.summary)
+    const noted = [
+      details.stays.length > 0 ? `${details.stays.length} 間旅館` : "",
+      details.flights.length > 0 ? `${details.flights.length} 個航班` : "",
+    ].filter(Boolean)
+    const extra = noted.length > 0 ? `已填上${noted.join("、")}，機型可以再補。` : ""
+    setImportSummary([parsed.summary, replaced, extra].filter(Boolean).join("。"))
     setError("")
   }
 
@@ -317,6 +350,8 @@ export function TripForm({
       stops.length !== (initial?.stops.length ?? 0) ||
       pending.length > 0 ||
       notes.trim() !== (initial?.notes ?? "") ||
+      JSON.stringify(flights) !== JSON.stringify(initial?.flights ?? []) ||
+      JSON.stringify(stays) !== JSON.stringify(initial?.stays ?? []) ||
       outline.trim() !== ""
     if (dirty && !window.confirm("放棄這次編輯？")) return
     onCancel()
@@ -348,7 +383,7 @@ export function TripForm({
             <Label htmlFor="trip-outline">貼上行程大綱</Label>
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            整段貼上即可。簡短列表，或是含每天、航班、住宿的完整行程表，都會讀出日期與城市。只記得年份和城市的舊旅行，用列表上的「一次補上很多趟」。
+            整段貼上即可。有每天行程的表會讀出日期、城市、旅館和航班編號。年份清單或手機照片，用旅程列表上的匯入。
           </p>
           <Textarea
             id="trip-outline"
@@ -543,6 +578,105 @@ export function TripForm({
           )}
         </section>
 
+        <section className="space-y-3">
+          <div>
+            <h3 className="font-medium">班機</h3>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">機型例如波音 787、A350。航段可以寫航班編號或城市。</p>
+          </div>
+          {flights.map((flight) => (
+            <div key={flight.id} className="flex gap-2">
+              <Input
+                aria-label="機型"
+                value={flight.aircraft}
+                placeholder="機型"
+                className="h-9 bg-card"
+                onChange={(event) =>
+                  setFlights((current) =>
+                    current.map((item) => (item.id === flight.id ? { ...item, aircraft: event.target.value } : item)),
+                  )
+                }
+              />
+              <Input
+                aria-label="航段"
+                value={flight.route}
+                placeholder="航段"
+                className="h-9 bg-card"
+                onChange={(event) =>
+                  setFlights((current) =>
+                    current.map((item) => (item.id === flight.id ? { ...item, route: event.target.value } : item)),
+                  )
+                }
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="移除班機"
+                onClick={() => setFlights((current) => current.filter((item) => item.id !== flight.id))}
+              >
+                <Trash2 />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setFlights((current) => [...current, { id: crypto.randomUUID(), aircraft: "", route: "" }])}
+          >
+            <Plus />
+            加入班機
+          </Button>
+        </section>
+
+        <section className="space-y-3">
+          <div>
+            <h3 className="font-medium">住宿</h3>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">寫下旅館名稱，並選它在哪一個城市。</p>
+          </div>
+          {stays.map((stay) => (
+            <div key={stay.id} className="flex gap-2">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Input
+                  aria-label="旅館名稱"
+                  value={stay.name}
+                  placeholder="旅館名稱"
+                  className="h-9 bg-card"
+                  onChange={(event) =>
+                    setStays((current) =>
+                      current.map((item) => (item.id === stay.id ? { ...item, name: event.target.value } : item)),
+                    )
+                  }
+                />
+                <StopSelect
+                  label="旅館在"
+                  stops={stops}
+                  value={stay.stopId}
+                  onChange={(stopId) =>
+                    setStays((current) => current.map((item) => (item.id === stay.id ? { ...item, stopId } : item)))
+                  }
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="移除旅館"
+                onClick={() => setStays((current) => current.filter((item) => item.id !== stay.id))}
+              >
+                <Trash2 />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setStays((current) => [...current, { id: crypto.randomUUID(), name: "" }])}
+          >
+            <Plus />
+            加入旅館
+          </Button>
+        </section>
+
         <div className="space-y-2">
           <Label htmlFor="trip-notes">旅程備註</Label>
           <Textarea
@@ -697,14 +831,16 @@ function StopSelect({
   stops,
   value,
   onChange,
+  label = "照片屬於",
 }: {
   stops: Stop[]
   value?: string
   onChange: (stopId: string | undefined) => void
+  label?: string
 }) {
   return (
     <select
-      aria-label="照片屬於"
+      aria-label={label}
       value={value ?? ""}
       className="h-8 w-full rounded-lg border bg-background px-2 text-xs"
       onChange={(event) => onChange(event.target.value || undefined)}

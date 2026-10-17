@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { Download, Flag, ListPlus, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
+import { Download, Flag, ListPlus, LocateFixed, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { DetailPanel } from "@/components/detail-panel"
 import { MemoryImportDialog } from "@/components/memory-import"
+import { TraceImportDialog, type TraceImport } from "@/components/trace-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
 import { createDemoTrips } from "@/lib/demo"
@@ -49,7 +50,7 @@ import {
   type FootprintBook,
 } from "@/lib/storage"
 import type { MemoryTrip } from "@/lib/memory-list"
-import type { ExportBundle, Stop, Trip } from "@/lib/types"
+import type { ExportBundle, PhotoRef, Stop, Trip } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const WorldMap = dynamic(() => import("@/components/world-map"), {
@@ -103,6 +104,7 @@ export function TravelApp() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [memoryOpen, setMemoryOpen] = useState(false)
+  const [traceOpen, setTraceOpen] = useState(false)
   const [bookNameDraft, setBookNameDraft] = useState("")
   const [camera, setCamera] = useState<Camera>({ kind: "idle" })
   const desktop = useIsDesktop()
@@ -356,6 +358,8 @@ export function TravelApp() {
         endDate: draft.endDate,
         notes: "",
         stops: draft.cities.map((city) => stopFromCity(city, approximate || !draft.startDate ? undefined : draft.startDate)),
+        flights: [],
+        stays: [],
         photos: [],
         createdAt,
       }
@@ -381,6 +385,64 @@ export function TravelApp() {
       })
     }
     notify(`已加入 ${created.length} 趟旅程`)
+  }
+
+  async function addTraces(drafts: TraceImport[]) {
+    const createdAt = new Date().toISOString()
+    const created: Trip[] = []
+    for (const draft of drafts) {
+      const stops = draft.stops.map((stop) => stopFromCity(stop.city, stop.day))
+      const photos: PhotoRef[] = []
+      for (const photo of draft.photos) {
+        const id = crypto.randomUUID()
+        await savePhotoBlob(id, photo.blob)
+        photos.push({
+          id,
+          kind: "upload" as const,
+          caption: photo.caption,
+          stopId: stops.find((stop) => stop.cityId === photo.cityId)?.id,
+          addedAt: createdAt,
+        })
+      }
+      created.push({
+        id: crypto.randomUUID(),
+        title: draft.title,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
+        notes: "",
+        stops,
+        flights: [],
+        stays: draft.stays.map((stay) => ({
+          id: crypto.randomUUID(),
+          name: stay.name,
+          stopId: stops.find((stop) => stop.cityId === stay.cityId)?.id,
+        })),
+        photos,
+        createdAt,
+      })
+    }
+    updateTrips((current) => [...created, ...current])
+    setTraceOpen(false)
+    setYear("all")
+    setQuery("")
+    setEditor(null)
+    setSelectedTripId(created[0]?.id ?? null)
+    setFocusStopId(created[0]?.stops[0]?.id ?? null)
+    setSelectedPinKey(null)
+    setMobileView("map")
+    const points = created.flatMap((trip) => trip.stops.map((stop) => [stop.lat, stop.lng] as [number, number]))
+    if (points.length > 0) {
+      setCamera({
+        kind: "bounds",
+        token: cameraToken("trace"),
+        points,
+        padRight: desktop ? 460 : 28,
+        padBottom: desktop ? 88 : 120,
+        maxZoom: 4,
+      })
+    }
+    const photoCount = created.reduce((total, trip) => total + trip.photos.length, 0)
+    notify(photoCount > 0 ? `已加入 ${created.length} 趟旅程，並留下 ${photoCount} 張照片` : `已加入 ${created.length} 趟旅程`)
   }
 
   function addDemo() {
@@ -582,13 +644,17 @@ export function TravelApp() {
                   <ListPlus />
                   一次補上很多趟
                 </Button>
+                <Button type="button" variant="outline" className="w-full" onClick={() => setTraceOpen(true)}>
+                  <LocateFixed />
+                  從照片或定位找出旅程
+                </Button>
               </div>
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
                 {filtered.length === 0 ? (
                   <div className="rounded-3xl border border-dashed bg-card px-4 py-8 text-center">
                     <p className="font-display text-2xl">地圖還是空白的</p>
                     <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-                      加一趟旅程，到過的地方就會升起旗幟。過去的旅行如果只記得年份和城市，可以一次貼上很多趟。
+                      加一趟旅程，到過的地方就會升起旗幟。過去的旅行可以一次貼上年份和城市，或從手機照片的定位整理出來。
                     </p>
                     <div className="mt-4 flex flex-col gap-2">
                       <Button onClick={startCreate}>新增第一趟旅程</Button>
@@ -625,6 +691,16 @@ export function TravelApp() {
                             {trip.photos.length > 0 && (
                               <Badge variant="secondary">{trip.photos.length} 張照片或連結</Badge>
                             )}
+                            {trip.flights.length > 0 && (
+                              <Badge variant="secondary">
+                                {trip.flights
+                                  .map((flight) => flight.aircraft || flight.route)
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .join("、")}
+                              </Badge>
+                            )}
+                            {trip.stays.length > 0 && <Badge variant="secondary">{trip.stays.length} 間旅館</Badge>}
                           </span>
                         </button>
                         <div className="mt-2 flex gap-2">
@@ -786,6 +862,7 @@ export function TravelApp() {
       )}
 
       <MemoryImportDialog open={memoryOpen} onOpenChange={setMemoryOpen} existing={trips} onAdd={addMemories} />
+      <TraceImportDialog open={traceOpen} onOpenChange={setTraceOpen} existing={trips} onAdd={(drafts) => void addTraces(drafts)} />
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

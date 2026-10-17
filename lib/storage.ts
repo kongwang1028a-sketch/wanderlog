@@ -1,5 +1,5 @@
 import { dataUrlToBlob } from "@/lib/images"
-import type { ExportBundle, PhotoRef, Stop, Trip } from "@/lib/types"
+import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
 const LEGACY_TRIP_KEY = "travel-footprints-v1"
 const BOOKS_KEY = "travel-footprints-books"
@@ -220,10 +220,36 @@ function parseTrips(raw: string): Trip[] {
   try {
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(isTrip)
+    return parsed.filter(isTrip).map(normalizeTrip)
   } catch {
     return []
   }
+}
+
+function normalizeTrip(trip: Trip): Trip {
+  const raw = trip as Trip & { flights?: unknown; stays?: unknown }
+  return {
+    ...trip,
+    flights: Array.isArray(raw.flights) ? raw.flights.flatMap(normalizeFlight) : [],
+    stays: Array.isArray(raw.stays) ? raw.stays.flatMap(normalizeStay) : [],
+  }
+}
+
+function normalizeFlight(value: unknown): FlightRecord[] {
+  if (!value || typeof value !== "object") return []
+  const flight = value as Partial<FlightRecord>
+  if (typeof flight.id !== "string") return []
+  const aircraft = typeof flight.aircraft === "string" ? flight.aircraft : ""
+  const route = typeof flight.route === "string" ? flight.route : ""
+  if (!aircraft.trim() && !route.trim()) return []
+  return [{ id: flight.id, aircraft, route }]
+}
+
+function normalizeStay(value: unknown): StayRecord[] {
+  if (!value || typeof value !== "object") return []
+  const stay = value as Partial<StayRecord>
+  if (typeof stay.id !== "string" || typeof stay.name !== "string" || !stay.name.trim()) return []
+  return [{ id: stay.id, name: stay.name, stopId: typeof stay.stopId === "string" ? stay.stopId : undefined }]
 }
 
 export async function savePhotoBlob(id: string, blob: Blob) {

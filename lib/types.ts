@@ -9,6 +9,18 @@ export type PhotoRef = {
   addedAt: string
 }
 
+export type FlightRecord = {
+  id: string
+  aircraft: string
+  route: string
+}
+
+export type StayRecord = {
+  id: string
+  name: string
+  stopId?: string
+}
+
 export type Stop = {
   id: string
   cityId?: string
@@ -28,6 +40,8 @@ export type Trip = {
   endDate: string
   notes: string
   stops: Stop[]
+  flights: FlightRecord[]
+  stays: StayRecord[]
   photos: PhotoRef[]
   createdAt: string
 }

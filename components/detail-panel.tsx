@@ -145,6 +145,34 @@ function TripBody({
         </ol>
       </section>
 
+      {trip.flights.length > 0 && (
+        <section>
+          <h3 className="font-display text-lg">班機</h3>
+          <ul className="mt-2 space-y-1 text-sm leading-6">
+            {trip.flights.map((flight) => (
+              <li key={flight.id}>{[flight.aircraft, flight.route].filter(Boolean).join(" · ")}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {trip.stays.length > 0 && (
+        <section>
+          <h3 className="font-display text-lg">住宿</h3>
+          <ul className="mt-2 space-y-1 text-sm leading-6">
+            {trip.stays.map((stay) => {
+              const city = trip.stops.find((stop) => stop.id === stay.stopId)?.name
+              return (
+                <li key={stay.id}>
+                  {stay.name}
+                  {city ? <span className="text-muted-foreground"> · {city}</span> : null}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
       {focused && spots && (
         <section>
           <h3 className="font-display text-lg">{focused.name}的知名景點</h3>
