@@ -1,7 +1,119 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-17T10:30:00.000Z",
+  "exportedAt": "2026-10-17T11:45:00.000Z",
   "trips": [
+    {
+      "id": "kansai-2026",
+      "title": "2026年8月 關西",
+      "startDate": "2026-08-06",
+      "endDate": "2026-08-13",
+      "notes": "8/6 下午入住大阪。8/9 環球影城。8/10 有馬溫泉泡湯、懷石。8/13 晚上從大阪離開。",
+      "stops": [
+        {
+          "id": "43b245a6-3b15-47e4-87bf-524833de888f",
+          "cityId": "jp-osaka",
+          "name": "大阪",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.6937,
+          "lng": 135.5023,
+          "date": "2026-08-06",
+          "note": "15:00 後入住，市區。"
+        },
+        {
+          "id": "bfa823aa-b26e-446b-ab02-4317097a792c",
+          "cityId": "jp-kyoto",
+          "name": "京都",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 35.0116,
+          "lng": 135.7681,
+          "date": "2026-08-07",
+          "note": "西陣織會館和服秀、清水寺、伏見稻荷千本鳥居。"
+        },
+        {
+          "id": "293dce0a-2d25-4a8a-b5fa-ef89f1e3aba8",
+          "cityId": "jp-himeji",
+          "name": "姬路",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.8394,
+          "lng": 134.6939,
+          "date": "2026-08-08",
+          "note": "姬路城。"
+        },
+        {
+          "id": "1ee4adfc-c721-4073-8f4e-cbde7423eeeb",
+          "cityId": "jp-kobe",
+          "name": "神戶",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.6901,
+          "lng": 135.1955,
+          "date": "2026-08-08",
+          "note": "北野異人館，晚上音樂美食船晚餐。"
+        },
+        {
+          "id": "f21fd66c-cda9-4aa9-a10a-2e778a95d30c",
+          "cityId": "jp-osaka",
+          "name": "大阪",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.6937,
+          "lng": 135.5023,
+          "date": "2026-08-09",
+          "note": "環球影城，哈利波特園區。"
+        },
+        {
+          "id": "2194a45d-9179-473d-a09e-faae3f4969a2",
+          "cityId": "jp-arima",
+          "name": "有馬溫泉",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.7975,
+          "lng": 135.2477,
+          "date": "2026-08-10",
+          "note": "泡湯與懷石料理。"
+        },
+        {
+          "id": "273bddb3-8454-4ce4-9429-9f95d45f871b",
+          "cityId": "jp-nara",
+          "name": "奈良",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.6851,
+          "lng": 135.8048,
+          "date": "2026-08-11",
+          "note": "東大寺、春日大社，中谷堂紅豆大福。"
+        },
+        {
+          "id": "675bc345-0aa1-4a9f-acf9-f4aea47bd159",
+          "cityId": "jp-shirakawa",
+          "name": "白川鄉",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 36.2576,
+          "lng": 136.906,
+          "date": "2026-08-12",
+          "note": "荻町合掌造集落。"
+        },
+        {
+          "id": "61b76d21-28b7-4996-8544-efa5ac04ca72",
+          "cityId": "jp-osaka",
+          "name": "大阪",
+          "country": "日本",
+          "countryCode": "JP",
+          "lat": 34.6937,
+          "lng": 135.5023,
+          "date": "2026-08-13",
+          "note": "退房後市區到 18:00，晚上班機離開。"
+        }
+      ],
+      "flights": [],
+      "stays": [],
+      "photos": [],
+      "createdAt": "2026-08-01T00:00:00.000Z"
+    },
     {
       "id": "fukuoka-2025",
       "title": "2025年10月 福岡 4天3夜",
@@ -10,7 +122,7 @@
       "notes": "去程 BR106，訂位 ECMGRS。回程 JX841，訂位 ECVJ9J。Day 1-2 住博多中央JR九州Blossom酒店，Day 3 住博多東急REI飯店。",
       "stops": [
         {
-          "id": "8e0b8a6e-b815-488e-b3eb-5ba073f3b636",
+          "id": "ef977186-7064-4219-897f-106cd51e3138",
           "cityId": "jp-fukuoka",
           "name": "福岡",
           "country": "日本",
@@ -21,7 +133,7 @@
           "note": "抵達福岡機場。行李先寄放博多中央JR九州Blossom酒店，再前往北九州。"
         },
         {
-          "id": "b78f3a33-1aa2-4968-8074-8d08362e4c6f",
+          "id": "6383edba-8a42-4972-8060-377e826961e9",
           "cityId": "jp-kitakyushu",
           "name": "北九州",
           "country": "日本",
@@ -32,7 +144,7 @@
           "note": "小倉 AruAruCity，傍晚搭皿倉山纜車看日落與夜景。"
         },
         {
-          "id": "2c30b669-b446-4c43-b784-21d803c56699",
+          "id": "33fbada0-dd8f-4697-817d-6b670c5e2c99",
           "cityId": "jp-fukuoka",
           "name": "福岡",
           "country": "日本",
@@ -59,12 +171,12 @@
         {
           "id": "fukuoka-2025-blossom",
           "name": "博多中央JR九州Blossom酒店",
-          "stopId": "8e0b8a6e-b815-488e-b3eb-5ba073f3b636"
+          "stopId": "ef977186-7064-4219-897f-106cd51e3138"
         },
         {
           "id": "fukuoka-2025-rei",
           "name": "博多東急REI飯店",
-          "stopId": "2c30b669-b446-4c43-b784-21d803c56699"
+          "stopId": "33fbada0-dd8f-4697-817d-6b670c5e2c99"
         }
       ],
       "photos": [],
@@ -78,7 +190,7 @@
       "notes": "同行：玟璇、梗梗。去回都是經濟艙，機上註記 Wifi Magic5，各可累積 931 哩。",
       "stops": [
         {
-          "id": "cbc85198-b7f4-410e-a592-1aff495241c8",
+          "id": "2cc792f7-c19b-4c18-909f-4e33206c2495",
           "cityId": "jp-yokohama",
           "name": "橫濱",
           "country": "日本",
@@ -89,7 +201,7 @@
           "note": "住在港未來。橫濱站東口步行約 11 分鐘，新高島站 4 號出口約 5 分鐘。"
         },
         {
-          "id": "c49cf48c-5c1c-4253-97fa-ca4161896d96",
+          "id": "4a5e255c-87bc-4839-9603-09e70220fb6f",
           "cityId": "jp-kamakura",
           "name": "鎌倉",
           "country": "日本",
@@ -114,7 +226,7 @@
         {
           "id": "yokohama-kamakura-2026-hilton",
           "name": "橫濱希爾頓酒店",
-          "stopId": "cbc85198-b7f4-410e-a592-1aff495241c8"
+          "stopId": "2cc792f7-c19b-4c18-909f-4e33206c2495"
         }
       ],
       "photos": [],
@@ -128,7 +240,7 @@
       "notes": "10/2 在飛機上跨越國際換日線，10/3 抵達台灣。",
       "stops": [
         {
-          "id": "532e26ee-3167-4c12-9e71-aa5421e96d8b",
+          "id": "2bd761e2-a274-4466-809c-1337ba9ec750",
           "cityId": "us-seattle",
           "name": "西雅圖",
           "country": "美國",
@@ -139,7 +251,7 @@
           "note": "登星辰公主號"
         },
         {
-          "id": "3aa69909-1abc-44a0-9caa-7adf1172ab50",
+          "id": "048bfa8f-e873-4314-b3d8-f2fce7019c7b",
           "cityId": "ca-inside-passage",
           "name": "內陸航道",
           "country": "加拿大",
@@ -149,7 +261,7 @@
           "date": "2026-09-21"
         },
         {
-          "id": "8a73ad2c-34a0-4090-94df-dc5eeef015b6",
+          "id": "46496d49-7622-4d9f-82b4-2b69234f8020",
           "cityId": "us-juneau",
           "name": "朱諾",
           "country": "美國",
@@ -159,7 +271,7 @@
           "date": "2026-09-22"
         },
         {
-          "id": "a0e1a199-caf9-4520-ae60-a8783ff12847",
+          "id": "79c1be8d-0aa4-4559-95b0-c6357ba3fca4",
           "cityId": "us-skagway",
           "name": "史凱威",
           "country": "美國",
@@ -169,7 +281,7 @@
           "date": "2026-09-23"
         },
         {
-          "id": "7c6cc25c-0029-4e2d-b38d-dc7a1e0ae59f",
+          "id": "e312df6a-26c8-4d5d-8478-27cb76c7289f",
           "cityId": "us-dawes",
           "name": "恩迪科特灣",
           "country": "美國",
@@ -180,7 +292,7 @@
           "note": "道斯冰河"
         },
         {
-          "id": "a89d1eec-1a88-4bcd-a109-e4efc4140786",
+          "id": "36528268-1215-4448-8566-926b70a510aa",
           "cityId": "us-ketchikan",
           "name": "柯契侃",
           "country": "美國",
@@ -190,7 +302,7 @@
           "date": "2026-09-25"
         },
         {
-          "id": "761515ee-249d-47d9-b104-97020300946f",
+          "id": "876078e2-e2d1-4af0-9c63-9f3e61ebdbd8",
           "cityId": "ca-vancouver",
           "name": "溫哥華",
           "country": "加拿大",
@@ -201,7 +313,7 @@
           "note": "溫哥華市區"
         },
         {
-          "id": "1f97fb9b-d881-42d2-a326-1ce75d4e2e2a",
+          "id": "601d376e-8de2-4c13-85ef-280d313c8201",
           "cityId": "ca-yellowknife",
           "name": "黃刀鎮",
           "country": "加拿大",
@@ -212,7 +324,7 @@
           "note": "極光追尋、極地體驗"
         },
         {
-          "id": "eb208732-13d7-4c75-a538-9e9c3afbff11",
+          "id": "a6ddd601-06d6-4eaf-9149-7814de1fdd9d",
           "cityId": "ca-vancouver",
           "name": "溫哥華",
           "country": "加拿大",
@@ -222,7 +334,7 @@
           "date": "2026-10-01"
         },
         {
-          "id": "cbf6d6e2-53b0-47ba-b282-83959522e67b",
+          "id": "41b359d8-ba42-4007-afef-2ee1fd38bf8f",
           "cityId": "us-seattle",
           "name": "西雅圖",
           "country": "美國",
@@ -237,7 +349,7 @@
         {
           "id": "aurora-pacific-2026-ship",
           "name": "星辰公主號",
-          "stopId": "532e26ee-3167-4c12-9e71-aa5421e96d8b"
+          "stopId": "2bd761e2-a274-4466-809c-1337ba9ec750"
         }
       ],
       "photos": [],

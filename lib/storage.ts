@@ -1,5 +1,6 @@
 import { AURORA_TITLE, AURORA_TRIP_ID, createAuroraTrip } from "@/lib/aurora-trip"
 import { FUKUOKA_TITLE, FUKUOKA_TRIP_ID, createFukuokaTrip } from "@/lib/fukuoka-trip"
+import { KANSAI_TITLE, KANSAI_TRIP_ID, createKansaiTrip } from "@/lib/kansai-trip"
 import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
@@ -8,6 +9,7 @@ const AURORA_SEED_KEY = "travel-footprints-seeded-aurora"
 const AURORA_FOCUS_FLAG = "travel-footprints-aurora-focused"
 const YOKOHAMA_FOCUS_FLAG = "travel-footprints-yokohama-focused"
 const FUKUOKA_FOCUS_FLAG = "travel-footprints-fukuoka-focused"
+const KANSAI_FOCUS_FLAG = "travel-footprints-kansai-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -121,6 +123,7 @@ export function subscribeTrips(listener: () => void) {
   ensureAuroraTrip()
   ensureYokohamaTrip()
   ensureFukuokaTrip()
+  ensureKansaiTrip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -383,6 +386,53 @@ function ensureFukuokaTrip() {
   if (current && localStorage.getItem(FUKUOKA_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(FUKUOKA_FOCUS_FLAG, "1")
+  }
+}
+
+function sameKansaiTrip(trip: Trip) {
+  if (trip.id === KANSAI_TRIP_ID) return true
+  if (trip.startDate === "2026-08-06" && trip.stops.some((stop) => stop.cityId === "jp-shirakawa")) return true
+  return trip.title.includes("關西") && trip.startDate.startsWith("2026-08")
+}
+
+function kansaiTripCurrent(trip: Trip) {
+  const ids = new Set(trip.stops.map((stop) => stop.cityId))
+  return (
+    ["jp-osaka", "jp-kyoto", "jp-himeji", "jp-kobe", "jp-arima", "jp-nara", "jp-shirakawa"].every((id) => ids.has(id)) &&
+    trip.startDate === "2026-08-06" &&
+    trip.endDate === "2026-08-13" &&
+    trip.stops.some((stop) => stop.note?.includes("環球影城"))
+  )
+}
+
+function ensureKansaiTrip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameKansaiTrip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !kansaiTripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(KANSAI_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createKansaiTrip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        if (merged.title !== KANSAI_TITLE) merged.title = KANSAI_TITLE
+        existing = [merged, ...existing.filter((trip) => !sameKansaiTrip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(KANSAI_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(KANSAI_FOCUS_FLAG, "1")
   }
 }
 
