@@ -22,6 +22,7 @@ import {
   AUSTRIA_CZECH_2010_TRIP_ID,
   createAustriaCzech2010Trip,
 } from "@/lib/austria-czech-2010-trip"
+import { HAKONE_2011_TITLE, HAKONE_2011_TRIP_ID, createHakone2011Trip } from "@/lib/hakone-2011-trip"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
@@ -41,6 +42,7 @@ const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
 const JAPAN_2018_FOCUS_FLAG = "travel-footprints-japan-2018-focused"
 const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
 const AUSTRIA_CZECH_2010_FOCUS_FLAG = "travel-footprints-austria-czech-2010-focused"
+const HAKONE_2011_FOCUS_FLAG = "travel-footprints-hakone-2011-focused"
 const AURORA_PORTS = [
   "us-seattle",
   "ca-inside-passage",
@@ -165,6 +167,7 @@ export function subscribeTrips(listener: () => void) {
   ensureJapan2018Trip()
   dropUnownedJapan2019FebTrip()
   ensureAustriaCzech2010Trip()
+  ensureHakone2011Trip()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -792,6 +795,56 @@ function ensureAustriaCzech2010Trip() {
   if (current && localStorage.getItem(AUSTRIA_CZECH_2010_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(AUSTRIA_CZECH_2010_FOCUS_FLAG, "1")
+  }
+}
+
+function sameHakone2011Trip(trip: Trip) {
+  if (trip.id === HAKONE_2011_TRIP_ID) return true
+  return trip.title === HAKONE_2011_TITLE && trip.startDate === "2011-01-26"
+}
+
+function hakone2011TripCurrent(trip: Trip) {
+  return (
+    trip.title === HAKONE_2011_TITLE &&
+    trip.startDate === "2011-01-26" &&
+    trip.endDate === "2011-01-26" &&
+    trip.stops.length === 1 &&
+    trip.stops[0]?.cityId === "jp-hakone" &&
+    trip.stops[0]?.note?.includes("大涌谷") === true &&
+    trip.flights.length === 0 &&
+    trip.stays.length === 0 &&
+    trip.notes.includes("只有一張照片") &&
+    trip.notes.includes("SANY1209_Original.JPG")
+  )
+}
+
+function ensureHakone2011Trip() {
+  if (typeof localStorage === "undefined") return
+  let existing = getTripSnapshot().trips
+  const index = existing.findIndex(sameHakone2011Trip)
+  let current = index >= 0 ? existing[index] : undefined
+  if (!current || !hakone2011TripCurrent(current)) {
+    const canInsert = !current && localStorage.getItem(HAKONE_2011_FOCUS_FLAG) !== "1"
+    if (current || canInsert) {
+      const created = createHakone2011Trip()
+      if (created) {
+        const merged: Trip = current
+          ? {
+              ...created,
+              id: current.id,
+              photos: current.photos,
+              createdAt: current.createdAt,
+            }
+          : created
+        existing = [merged, ...existing.filter((trip) => !sameHakone2011Trip(trip))]
+        writeTrips(existing)
+        current = merged
+      }
+    }
+  }
+  if (current && localStorage.getItem(HAKONE_2011_FOCUS_FLAG) !== "1") {
+    pendingAuroraFocus = current.id
+    localStorage.setItem(HAKONE_2011_FOCUS_FLAG, "1")
   }
 }
 
