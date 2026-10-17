@@ -109,7 +109,8 @@ function isTransitMention(note: string, start: number, end: number, name: string
 }
 
 export function stopPlaceLine(note: string | undefined, fallback: string) {
-  if (!note) return fallback
+  const named = LANDMARKS.filter((name) => fallback.includes(name)).sort((a, b) => b.length - a.length)[0]
+  if (!note) return named ?? fallback
   const hits: { start: number; end: number; name: string }[] = []
   for (const name of PLACE_NAMES) {
     let from = 0
@@ -130,10 +131,12 @@ export function stopPlaceLine(note: string | undefined, fallback: string) {
   }
   const landmarks = kept.filter((hit) => !AREA_NAMES.has(hit.name))
   const areas = kept.filter((hit) => AREA_NAMES.has(hit.name))
-  const chosen = [...landmarks, ...areas].slice(0, PLACE_LIMIT)
-  if (chosen.length > 0) return chosen.map((hit) => hit.name).join("、")
-  const line = note.split("\n")[0]?.trim() || fallback
-  return line.length > 36 ? `${line.slice(0, 36)}…` : line
+  if (landmarks.length > 0) {
+    return [...landmarks, ...areas].slice(0, PLACE_LIMIT).map((hit) => hit.name).join("、")
+  }
+  if (named) return named
+  if (areas.length > 0) return areas.slice(0, PLACE_LIMIT).map((hit) => hit.name).join("、")
+  return fallback
 }
 
 export function buildPins(trips: Trip[]): Pin[] {

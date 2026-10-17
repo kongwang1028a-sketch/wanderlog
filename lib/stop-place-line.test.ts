@@ -36,7 +36,19 @@ assert.equal(
 )
 assert.equal(stopPlaceLine("Super Hotel 秋葉原末広町。接著晴空塔逛街。", "東京"), "晴空塔、秋葉原")
 assert.equal(stopPlaceLine("14:00 北池袋 Buku。15:40 神田明神。", "東京"), "神田明神")
-assert.equal(stopPlaceLine("詳細行程還沒找到。", "東京"), "詳細行程還沒找到。")
+assert.equal(stopPlaceLine("詳細行程還沒找到。", "東京"), "東京")
+assert.equal(
+  stopPlaceLine("早餐前一天自備。7:00 出門。秋葉原搭京濱東北線蒲田行到東京，轉京葉線蘇我行到舞濱。", "東京迪士尼"),
+  "迪士尼",
+)
+assert.equal(stopPlaceLine("7:45 池袋接駁車日幣1000。9:00 入園。", "東京迪士尼"), "迪士尼")
+
+const disney = buildPins(bundle.trips).find((pin) => pin.name === "東京迪士尼")
+assert.ok(disney)
+for (const visit of disney.visits) {
+  assert.equal(visit.places, "迪士尼", visit.stopId)
+  console.log(`${visit.date} ${visit.title}｜${visit.places}`)
+}
 
 for (const pin of buildPins(bundle.trips)) {
   for (const visit of pin.visits) {
