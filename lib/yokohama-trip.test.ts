@@ -3,7 +3,7 @@ import { createYokohamaTrip } from "./yokohama-trip"
 
 const trip = createYokohamaTrip()
 assert.ok(trip)
-assert.equal(trip.title, "橫濱、鎌倉")
+assert.equal(trip.title, "2026年1月 橫濱鎌倉")
 assert.equal(trip.startDate, "2026-01-17")
 assert.equal(trip.endDate, "2026-01-20")
 assert.deepEqual(
@@ -17,4 +17,4 @@ assert.equal(trip.stays[0]?.name, "橫濱希爾頓酒店")
 assert.equal(trip.stays[0]?.stopId, trip.stops[0]?.id)
 assert.match(trip.notes, /玟璇/)
 assert.match(trip.notes, /梗梗/)
-console.log("ok 橫濱、鎌倉")
+console.log("ok 2026年1月 橫濱鎌倉")

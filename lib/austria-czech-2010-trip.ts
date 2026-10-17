@@ -2,7 +2,7 @@ import { cityById } from "@/lib/cities"
 import type { Trip } from "@/lib/types"
 
 export const AUSTRIA_CZECH_2010_TRIP_ID = "austria-czech-2010"
-export const AUSTRIA_CZECH_2010_TITLE = "2010年 奧地利、捷克"
+export const AUSTRIA_CZECH_2010_TITLE = "2010年7月 奧地利捷克"
 
 export function createAustriaCzech2010Trip(): Trip | null {
   const prague = cityById("cz-prague")

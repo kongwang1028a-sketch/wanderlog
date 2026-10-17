@@ -3,7 +3,7 @@ import { stopFromCity } from "@/lib/geo"
 import type { Trip } from "@/lib/types"
 
 export const YOKOHAMA_TRIP_ID = "yokohama-kamakura-2026"
-export const YOKOHAMA_TITLE = "橫濱、鎌倉"
+export const YOKOHAMA_TITLE = "2026年1月 橫濱鎌倉"
 
 export function createYokohamaTrip(): Trip | null {
   const yokohamaCity = cityById("jp-yokohama")

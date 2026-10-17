@@ -3,7 +3,7 @@ import { parseItinerary } from "@/lib/itinerary"
 import type { Trip } from "@/lib/types"
 
 export const KANSAI_TRIP_ID = "kansai-2026"
-export const KANSAI_TITLE = "2016年8月 關西"
+export const KANSAI_TITLE = "2016年8月 大阪京都姬路神戶有馬溫泉奈良白川鄉"
 
 export const KANSAI_TEXT = `8/6 after 15:00 checking, 大阪 downtown
 8/7 京都  西織鎮 西陣織會館 和服秀、 清水寺、 伏見稲荷大社 千本鳥居

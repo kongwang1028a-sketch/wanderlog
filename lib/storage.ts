@@ -5,15 +5,18 @@ import { JAPAN_DEC_TITLE, JAPAN_DEC_TRIP_ID, createJapanDecemberTrip } from "@/l
 import { TOKYO_MAY_TITLE, TOKYO_MAY_TRIP_ID, createTokyoMayTrip } from "@/lib/tokyo-may-trip"
 import { YOKOHAMA_TITLE, YOKOHAMA_TRIP_ID, createYokohamaTrip } from "@/lib/yokohama-trip"
 import {
+  GERMANY_2017_TITLE,
   GERMANY_2017_TRIP_ID,
+  JAPAN_JUN_2023_TITLE,
   JAPAN_JUN_2023_TRIP_ID,
+  RUSSIA_2018_TITLE,
   RUSSIA_2018_TRIP_ID,
   createGermany2017Trip,
   createJapanJun2023Trip,
   createRussia2018Trip,
 } from "@/lib/outline-trips"
-import { JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
-import { JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
+import { JAPAN_2018_TITLE, JAPAN_2018_TRIP_ID, createJapan2018Trip } from "@/lib/japan-2018-tokyo-trip"
+import { JAPAN_2019_TITLE, JAPAN_2019_TRIP_ID, createJapan2019Trip } from "@/lib/japan-2019-trip"
 import {
   AUSTRIA_CZECH_2010_TITLE,
   AUSTRIA_CZECH_2010_TRIP_ID,
@@ -42,6 +45,23 @@ const JAPAN_2018_TOKYO_FOCUS_FLAG = "travel-footprints-japan-2018-tokyo-focused"
 const AUSTRIA_CZECH_2010_FOCUS_FLAG = "travel-footprints-austria-czech-2010-focused"
 const HAKONE_2011_FOCUS_FLAG = "travel-footprints-hakone-2011-focused"
 const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
+const TITLE_FORMAT_FLAG = "travel-footprints-title-format-v1"
+const STANDARD_TITLES: Record<string, string> = {
+  [AURORA_TRIP_ID]: AURORA_TITLE,
+  [YOKOHAMA_TRIP_ID]: YOKOHAMA_TITLE,
+  [FUKUOKA_TRIP_ID]: FUKUOKA_TITLE,
+  [KANSAI_TRIP_ID]: KANSAI_TITLE,
+  [TOKYO_MAY_TRIP_ID]: TOKYO_MAY_TITLE,
+  [JAPAN_DEC_TRIP_ID]: JAPAN_DEC_TITLE,
+  [JAPAN_JUN_2023_TRIP_ID]: JAPAN_JUN_2023_TITLE,
+  [GERMANY_2017_TRIP_ID]: GERMANY_2017_TITLE,
+  [JAPAN_2019_TRIP_ID]: JAPAN_2019_TITLE,
+  [RUSSIA_2018_TRIP_ID]: RUSSIA_2018_TITLE,
+  [JAPAN_2018_TRIP_ID]: JAPAN_2018_TITLE,
+  [AUSTRIA_CZECH_2010_TRIP_ID]: AUSTRIA_CZECH_2010_TITLE,
+  [HAKONE_2011_TRIP_ID]: HAKONE_2011_TITLE,
+  [TOKYO_2016_FEB_TRIP_ID]: TOKYO_2016_FEB_TITLE,
+}
 
 let pendingAuroraFocus: string | null = null
 let createdBookThisPage = false
@@ -159,6 +179,7 @@ export function subscribeTrips(listener: () => void) {
   ensureAustriaCzech2010Trip()
   ensureHakone2011Trip()
   ensureTokyo2016FebTrip()
+  applyStandardTitlesOnce()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -642,6 +663,40 @@ function ensureTokyo2016FebTrip() {
   if (current && localStorage.getItem(TOKYO_2016_FEB_FOCUS_FLAG) !== "1") {
     pendingAuroraFocus = current.id
     localStorage.setItem(TOKYO_2016_FEB_FOCUS_FLAG, "1")
+  }
+}
+
+function applyStandardTitlesOnce() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(TITLE_FORMAT_FLAG) === "1") return
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      const trips = parsed.filter(isTrip)
+      let changed = false
+      const next = trips.map((trip) => {
+        const title = STANDARD_TITLES[trip.id]
+        if (!title || trip.title === title) return trip
+        changed = true
+        return { ...trip, title }
+      })
+      if (!changed) continue
+      localStorage.setItem(key, JSON.stringify(next))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
+    }
+  }
+  localStorage.setItem(TITLE_FORMAT_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
   }
 }
 

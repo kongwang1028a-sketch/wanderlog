@@ -3,7 +3,7 @@ import { parseItinerary } from "@/lib/itinerary"
 import type { Trip } from "@/lib/types"
 
 export const AURORA_TRIP_ID = "aurora-pacific-2026"
-export const AURORA_TITLE = "美加極光海陸旅行團"
+export const AURORA_TITLE = "2026年9月 美加 (極光)"
 
 export const AURORA_TEXT = `美加極光海陸旅行團
 2026/9/19-10/3
@@ -28,7 +28,7 @@ export function createAuroraTrip(): Trip | null {
   const shipStop = stops.find((stop) => stop.cityId === "us-seattle")
   return {
     id: AURORA_TRIP_ID,
-    title: parsed.title || AURORA_TITLE,
+    title: AURORA_TITLE,
     startDate: parsed.startDate,
     endDate: parsed.endDate,
     notes: "10/2 在飛機上跨越國際換日線，10/3 抵達台灣。",

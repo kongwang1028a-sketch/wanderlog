@@ -3,7 +3,7 @@ import { parseItinerary } from "@/lib/itinerary"
 import type { Trip } from "@/lib/types"
 
 export const TOKYO_MAY_TRIP_ID = "tokyo-may-2024"
-export const TOKYO_MAY_TITLE = "五月東京"
+export const TOKYO_MAY_TITLE = "2024年5月 東京"
 
 export const TOKYO_MAY_TEXT = `行程名稱：五月東京
 第1天 (2024/05/18)

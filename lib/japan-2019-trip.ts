@@ -2,7 +2,7 @@ import { cityById, type City } from "@/lib/cities"
 import type { Stop, Trip } from "@/lib/types"
 
 export const JAPAN_2019_TRIP_ID = "japan-2019"
-export const JAPAN_2019_TITLE = "2019年 日本"
+export const JAPAN_2019_TITLE = "2019年9月 東京大阪神戶"
 
 function placed(id: string, city: City, date: string, note: string): Stop {
   return {

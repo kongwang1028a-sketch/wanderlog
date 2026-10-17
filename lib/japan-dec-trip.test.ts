@@ -3,7 +3,7 @@ import { createJapanDecemberTrip } from "./japan-dec-trip"
 
 const trip = createJapanDecemberTrip()
 assert.ok(trip)
-assert.equal(trip.title, "2024年12月 日本")
+assert.equal(trip.title, "2024年12月 京都東京")
 assert.equal(trip.startDate, "2024-12-14")
 assert.equal(trip.endDate, "2024-12-21")
 assert.deepEqual(

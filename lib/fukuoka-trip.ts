@@ -3,7 +3,7 @@ import { parseItinerary } from "@/lib/itinerary"
 import type { Trip } from "@/lib/types"
 
 export const FUKUOKA_TRIP_ID = "fukuoka-2025"
-export const FUKUOKA_TITLE = "2025年10月 福岡 4天3夜"
+export const FUKUOKA_TITLE = "2025年10月 福岡北九州 (4天3夜)"
 
 export const FUKUOKA_TEXT = `🏯 2025年10月 福岡 4天3夜 行程總整理
 旅行日期： 10月23日（四）～10月26日（日）

@@ -3,7 +3,7 @@ import { stopFromCity } from "@/lib/geo"
 import type { Trip } from "@/lib/types"
 
 export const JAPAN_DEC_TRIP_ID = "japan-dec-2024"
-export const JAPAN_DEC_TITLE = "2024年12月 日本"
+export const JAPAN_DEC_TITLE = "2024年12月 京都東京"
 
 export function createJapanDecemberTrip(): Trip | null {
   const kyotoCity = cityById("jp-kyoto")
