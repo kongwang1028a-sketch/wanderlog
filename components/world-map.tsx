@@ -231,7 +231,7 @@ export default function WorldMap({
 
   useEffect(() => {
     let cancelled = false
-    fetch("/geo/countries-50m.json")
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/geo/countries-50m.json`)
       .then((response) => {
         if (!response.ok) throw new Error("geo")
         return response.json() as Promise<{ objects: { countries: object } }>

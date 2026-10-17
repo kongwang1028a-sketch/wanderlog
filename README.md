@@ -31,14 +31,21 @@ npm run dev -- -H 0.0.0.0 -p 43123
 
 地圖地名使用 Google 的繁體中文圖磚，需要網路才能看到。國家界線已包含在專案裡。
 
-## 放到網路上
+## 放到 GitHub Pages
 
-旅程不會因為網站上線就上傳。每個人的紀錄仍在自己的瀏覽器。
+旅程不會因為網站上線就上傳。每個人的紀錄仍在自己的瀏覽器。GitHub Pages 是靜態網頁，公開網址不使用進入密碼。
 
-1. 把這個專案放到 GitHub。如果還沒有存放庫，先建立一個。
-2. 到 [Vercel](https://vercel.com) 用該存放庫建立專案，框架選 Next.js。
-3. 在 Vercel 的 Environment Variables 新增 `SITE_PASSWORD`，值是你要給朋友的進入密碼。留空則任何人拿到網址都能打開網站，但仍然看不到別人的旅程。
-4. 部署完成後，把 `https://` 開頭的網址傳給朋友，密碼另外傳，不要寫在網址裡。
+1. 在 Cursor 建立 GitHub 存放庫，並把 `main` 推上去。
+2. 到該存放庫的 Settings → Pages → Build and deployment，Source 選 GitHub Actions。
+3. 推上 `main` 之後，Actions 會自動發布。網址會是 `https://你的帳號.github.io/存放庫名稱/`。如果存放庫名稱是 `帳號.github.io`，網址則是 `https://帳號.github.io/`。
+
+## 放到 Vercel
+
+若要設定進入密碼，改用有伺服器的主機。
+
+1. 到 [Vercel](https://vercel.com) 用該存放庫建立專案，框架選 Next.js。
+2. 在 Vercel 的 Environment Variables 新增 `SITE_PASSWORD`，值是你要給朋友的進入密碼。留空則任何人拿到網址都能打開網站，但仍然看不到別人的旅程。
+3. 部署完成後，把 `https://` 開頭的網址傳給朋友，密碼另外傳，不要寫在網址裡。
 
 改密碼之後重新部署，舊的進入狀態會失效。想改回公開，刪掉 `SITE_PASSWORD` 再部署一次。
 
