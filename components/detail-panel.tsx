@@ -93,7 +93,9 @@ function TripBody({
       <div>
         <p className="text-sm text-muted-foreground">{formatRange(trip.startDate, trip.endDate)}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{tripLength(trip.startDate, trip.endDate)} 天</Badge>
+          {tripLength(trip.startDate, trip.endDate) > 0 ? (
+            <Badge variant="secondary">{tripLength(trip.startDate, trip.endDate)} 天</Badge>
+          ) : null}
           <span className="text-lg leading-none">{countries.map((code) => flagEmoji(code)).join(" ")}</span>
         </div>
       </div>

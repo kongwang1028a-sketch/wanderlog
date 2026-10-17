@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { Download, Flag, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
+import { Download, Flag, ListPlus, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,15 +15,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DetailPanel } from "@/components/detail-panel"
+import { MemoryImportDialog } from "@/components/memory-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
 import { createDemoTrips } from "@/lib/demo"
-import { formatRange, totalTravelDays } from "@/lib/format"
+import { formatRange, isWholeMonth, isWholeYear, totalTravelDays } from "@/lib/format"
 import { blobToDataUrl } from "@/lib/images"
 import {
   buildPins,
   flagEmoji,
   placeKey,
+  stopFromCity,
   uniqueCountries,
   uniquePlaces,
   visitedCountryIds,
@@ -46,6 +48,7 @@ import {
   updateTrips,
   type FootprintBook,
 } from "@/lib/storage"
+import type { MemoryTrip } from "@/lib/memory-list"
 import type { ExportBundle, Stop, Trip } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -99,6 +102,7 @@ export function TravelApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [memoryOpen, setMemoryOpen] = useState(false)
   const [bookNameDraft, setBookNameDraft] = useState("")
   const [camera, setCamera] = useState<Camera>({ kind: "idle" })
   const desktop = useIsDesktop()
@@ -341,6 +345,44 @@ export function TravelApp() {
     })
   }
 
+  function addMemories(drafts: MemoryTrip[]) {
+    const createdAt = new Date().toISOString()
+    const created = drafts.map((draft) => {
+      const approximate = isWholeYear(draft.startDate, draft.endDate) || isWholeMonth(draft.startDate, draft.endDate)
+      return {
+        id: crypto.randomUUID(),
+        title: draft.title,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
+        notes: "",
+        stops: draft.cities.map((city) => stopFromCity(city, approximate || !draft.startDate ? undefined : draft.startDate)),
+        photos: [],
+        createdAt,
+      }
+    })
+    updateTrips((current) => [...created, ...current])
+    setMemoryOpen(false)
+    setYear("all")
+    setQuery("")
+    setEditor(null)
+    setSelectedTripId(created[0]?.id ?? null)
+    setFocusStopId(created[0]?.stops[0]?.id ?? null)
+    setSelectedPinKey(null)
+    setMobileView("map")
+    const points = created.flatMap((trip) => trip.stops.map((stop) => [stop.lat, stop.lng] as [number, number]))
+    if (points.length > 0) {
+      setCamera({
+        kind: "bounds",
+        token: cameraToken("memory"),
+        points,
+        padRight: desktop ? 460 : 28,
+        padBottom: desktop ? 88 : 120,
+        maxZoom: 4,
+      })
+    }
+    notify(`已加入 ${created.length} 趟旅程`)
+  }
+
   function addDemo() {
     const existing = new Set(trips.map((trip) => trip.id))
     const fresh = createDemoTrips().filter((trip) => !existing.has(trip.id))
@@ -536,13 +578,17 @@ export function TravelApp() {
                     </FilterChip>
                   ))}
                 </div>
+                <Button type="button" variant="outline" className="w-full" onClick={() => setMemoryOpen(true)}>
+                  <ListPlus />
+                  一次補上很多趟
+                </Button>
               </div>
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
                 {filtered.length === 0 ? (
                   <div className="rounded-3xl border border-dashed bg-card px-4 py-8 text-center">
                     <p className="font-display text-2xl">地圖還是空白的</p>
                     <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-                      加一趟旅程，到過的地方就會升起旗幟。也可以先放入兩段示範，看看路線怎麼畫。
+                      加一趟旅程，到過的地方就會升起旗幟。過去的旅行如果只記得年份和城市，可以一次貼上很多趟。
                     </p>
                     <div className="mt-4 flex flex-col gap-2">
                       <Button onClick={startCreate}>新增第一趟旅程</Button>
@@ -739,6 +785,7 @@ export function TravelApp() {
         </div>
       )}
 
+      <MemoryImportDialog open={memoryOpen} onOpenChange={setMemoryOpen} existing={trips} onAdd={addMemories} />
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

@@ -348,7 +348,7 @@ export function TripForm({
             <Label htmlFor="trip-outline">貼上行程大綱</Label>
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            整段貼上即可。簡短列表，或是含每天、航班、住宿的完整行程表，都會讀出日期與城市。
+            整段貼上即可。簡短列表，或是含每天、航班、住宿的完整行程表，都會讀出日期與城市。只記得年份和城市的舊旅行，用列表上的「一次補上很多趟」。
           </p>
           <Textarea
             id="trip-outline"

@@ -510,6 +510,21 @@ function findPlaces(line: string, occupied: boolean[], context: { hasDate: boole
   return chosen
 }
 
+export function citiesMentioned(text: string): City[] {
+  const line = stripDecor(stripBullet(normalize(text))).trim()
+  if (!line) return []
+  const occupied = Array.from({ length: line.length }, () => false)
+  const places = findPlaces(line, occupied, { hasDate: true, placeOnly: false })
+  const foreign = places.some((place) => place.city.code !== "TW" && place.kind !== "airport")
+  const chosen: City[] = []
+  for (const place of places) {
+    if (place.kind === "airport" && place.city.code === "TW" && foreign) continue
+    if (chosen[chosen.length - 1]?.id === place.city.id) continue
+    chosen.push(place.city)
+  }
+  return chosen
+}
+
 function acceptLatin(slice: string, needle: string, context: { hasDate: boolean; placeOnly: boolean }) {
   const capitalized = /^[A-Z]/.test(slice)
   if (AMBIGUOUS_LATIN.has(needle.toLowerCase())) return capitalized || context.placeOnly
