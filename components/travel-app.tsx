@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { Download, Flag, ListPlus, LocateFixed, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
+import { Download, Flag, ListPlus, LocateFixed, Lock, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -88,7 +88,7 @@ function useIsDesktop() {
   return useSyncExternalStore(subscribeDesktop, desktopSnapshot, () => false)
 }
 
-export function TravelApp() {
+export function TravelApp({ onLock }: { onLock?: () => void }) {
   const snapshot = useSyncExternalStore(subscribeTrips, getTripSnapshot, getServerTripSnapshot)
   const bookStore = useSyncExternalStore(subscribeBooks, getBookSnapshot, getServerBookSnapshot)
   const trips = snapshot.trips
@@ -709,6 +709,11 @@ export function TravelApp() {
             <p className="mt-1 max-w-[9rem] truncate text-xs text-muted-foreground sm:max-w-none">{bookName}</p>
           </div>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            {onLock ? (
+              <Button variant="outline" size="icon" aria-label="鎖定" onClick={onLock}>
+                <Lock />
+              </Button>
+            ) : null}
             <Button variant="outline" size="icon" className="sm:hidden" aria-label="分享給朋友" onClick={() => setShareOpen(true)}>
               <Share2 />
             </Button>

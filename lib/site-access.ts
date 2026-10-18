@@ -1,5 +1,7 @@
 export const ACCESS_COOKIE = "travel-footprints-access"
 
+export const SITE_ACCESS_TOKEN = "9bf477bdb2e3ef452c653d1a962e6a149dfd76a713962661243257eaec19c60f"
+
 export function sitePassword() {
   return process.env.SITE_PASSWORD?.trim() ?? ""
 }

@@ -1,5 +1,5 @@
-import { TravelApp } from "@/components/travel-app";
+import { SiteGate } from "@/components/site-gate";
 
 export default function Page() {
-  return <TravelApp />;
+  return <SiteGate />;
 }

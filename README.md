@@ -38,27 +38,14 @@ npm run dev -- -H 0.0.0.0 -p 43123
 
 `public/data/footprints.json` 是第一次打開時的底稿。你在網頁上改過的內容會另外記住，不會被這份舊檔蓋掉。
 
-GitHub Pages 是靜態網頁，公開網址不使用進入密碼。存放庫需要是 Public，免費方案才會提供 Pages。
+打開網站會先進入密碼頁，密碼正確才看得到地圖和旅程。可以勾選「自動記住密碼」，這台裝置一週內就不用再輸入。右上角的鎖定會清掉記住的狀態，立刻回到密碼頁。
 
 ## 放到 GitHub Pages
 
-GitHub Pages 會把網站發布出去。公開網址不使用進入密碼，存放庫需要是 Public。在網頁上改過的旅程會出現在其他裝置，不用再把 footprints.json 下載回來覆蓋。
+GitHub Pages 會把網站發布出去。存放庫需要是 Public。打開網址會先經過密碼頁。在網頁上改過的旅程會出現在其他裝置，不用再把 footprints.json 下載回來覆蓋。
 
 ## 放到 Vercel
 
-若要設定進入密碼，改用有伺服器的主機。
+到 [Vercel](https://vercel.com) 用該存放庫建立專案，框架選 Next.js。網站本身有密碼頁。部署完成後把網址傳給朋友，密碼另外傳，不要寫在網址裡。
 
-1. 到 [Vercel](https://vercel.com) 用該存放庫建立專案，框架選 Next.js。
-2. 在 Vercel 的 Environment Variables 新增 `SITE_PASSWORD`，值是你要給朋友的進入密碼。留空則任何人拿到網址都能打開網站，並看到公開足跡。各自另外建立的足跡本仍然只留在自己的瀏覽器。
-3. 部署完成後，把 `https://` 開頭的網址傳給朋友，密碼另外傳，不要寫在網址裡。
-
-改密碼之後重新部署，舊的進入狀態會失效。想改回公開，刪掉 `SITE_PASSWORD` 再部署一次。
-
-自己的伺服器也可以：
-
-```bash
-SITE_PASSWORD=約好的密碼 npm run build
-SITE_PASSWORD=約好的密碼 npm start
-```
-
-設了密碼之後，搜尋引擎會被要求不要收錄這個網站。
+若另外在伺服器設定環境變數 `SITE_PASSWORD`，進站時會再檢查一次。沒有設定的話，使用網頁上的密碼頁即可。搜尋引擎會被要求不要收錄這個網站。
