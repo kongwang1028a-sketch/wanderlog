@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { mergeCompanions, splitCompanionNames } from "@/lib/companions"
 import { countryOptions, type City } from "@/lib/cities"
 import { detectPhotoKind, isHttpUrl, photoKindLabel } from "@/lib/format"
 import { nearestCity, searchCities, stopFromCity } from "@/lib/geo"
@@ -54,6 +55,9 @@ export function TripForm({
   const [startDate, setStartDate] = useState(initial?.startDate ?? "")
   const [endDate, setEndDate] = useState(initial?.endDate ?? "")
   const [notes, setNotes] = useState(initial?.notes ?? "")
+  const [withGroup, setWithGroup] = useState(initial?.withGroup === true)
+  const [companions, setCompanions] = useState<string[]>(initial?.companions ?? [])
+  const [companionDraft, setCompanionDraft] = useState("")
   const [stops, setStops] = useState<Stop[]>(initial?.stops ?? [])
   const [flights, setFlights] = useState<FlightRecord[]>(initial?.flights ?? [])
   const [stays, setStays] = useState<StayRecord[]>(initial?.stays ?? [])
@@ -263,6 +267,8 @@ export function TripForm({
       startDate,
       endDate,
       notes: notes.trim(),
+      withGroup,
+      companions,
       stops,
       flights: flights
         .map((flight) => ({ ...flight, aircraft: flight.aircraft.trim(), route: flight.route.trim() }))
@@ -292,6 +298,13 @@ export function TripForm({
       setError("儲存失敗。若照片很多，試試減少幾張，或先匯出再清理。")
       setSaving(false)
     }
+  }
+
+  function addCompanions() {
+    const incoming = splitCompanionNames(companionDraft)
+    if (incoming.length === 0) return
+    setCompanions((current) => mergeCompanions(current, incoming))
+    setCompanionDraft("")
   }
 
   function applyOutline() {
@@ -675,6 +688,53 @@ export function TripForm({
             <Plus />
             加入旅館
           </Button>
+        </section>
+
+        <section className="space-y-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-terracotta"
+              checked={withGroup}
+              onChange={(event) => setWithGroup(event.target.checked)}
+            />
+            這趟跟旅行團
+          </label>
+          <div className="space-y-2">
+            <Label htmlFor="companion-name">同行朋友</Label>
+            <div className="flex gap-2">
+              <Input
+                id="companion-name"
+                value={companionDraft}
+                placeholder="輸入綽號，多個人用頓號分開"
+                className="h-9 bg-card"
+                onChange={(event) => setCompanionDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault()
+                    addCompanions()
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" onClick={addCompanions}>
+                加入
+              </Button>
+            </div>
+            {companions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {companions.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className="rounded-full bg-secondary px-3 py-1 text-xs"
+                    onClick={() => setCompanions((current) => current.filter((item) => item !== name))}
+                  >
+                    {name} ×
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         <div className="space-y-2">

@@ -1,3 +1,4 @@
+import { partyFor } from "@/lib/companions"
 import { cityById, type City } from "@/lib/cities"
 import type { Stop, Trip } from "@/lib/types"
 
@@ -48,6 +49,7 @@ export function createJapan2018Trip(): Trip | null {
     startDate: "2018-10-28",
     endDate: "2018-11-02",
     notes: "76、DADA、梗梗、我廢。住北池袋 Buku Tokyo 東京日租。表上沒有航班編號。總花費臺幣11438、日幣23959。表上另有ふらんす亭，奈葉合作餐廳，入場費日幣1080，沒有排在哪一天。",
+    ...partyFor(JAPAN_2018_TRIP_ID),
     stops: [
       tokyoStop,
       placed(

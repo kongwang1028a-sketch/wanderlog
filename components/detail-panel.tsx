@@ -95,8 +95,16 @@ function TripBody({
             <Badge variant="secondary">{tripLength(trip.startDate, trip.endDate)} 天</Badge>
           ) : null}
           <span className="text-lg leading-none">{countries.map((code) => flagEmoji(code)).join(" ")}</span>
+          {trip.withGroup && <Badge variant="secondary">旅行團</Badge>}
         </div>
       </div>
+
+      {(trip.companions ?? []).length > 0 && (
+        <section>
+          <h3 className="font-display text-lg">同行</h3>
+          <p className="mt-2 text-sm leading-6">{trip.companions?.join("、")}</p>
+        </section>
+      )}
 
       <section>
         <h3 className="font-display text-lg">路線</h3>

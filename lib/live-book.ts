@@ -21,6 +21,8 @@ export function tripSignature(trips: Trip[]) {
       startDate: iso(trip.startDate),
       endDate: iso(trip.endDate),
       notes: trip.notes ?? "",
+      withGroup: trip.withGroup === true,
+      companions: trip.companions ?? [],
       createdAt: iso(trip.createdAt),
       stops: trip.stops.map((stop) => ({
         id: stop.id,

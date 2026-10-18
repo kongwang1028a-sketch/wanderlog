@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-18T12:50:00.000Z",
+  "exportedAt": "2026-10-18T13:28:09.000Z",
   "trips": [
     {
       "id": "tokyo-2016-feb",
@@ -63,7 +63,16 @@
         }
       ],
       "photos": [],
-      "createdAt": "2016-02-01T00:00:00.000Z"
+      "createdAt": "2016-02-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": [
+        "丹丹吃漢堡",
+        "ㄆㄆ",
+        "阿閒",
+        "ㄒㄒ",
+        "ㄘㄘ",
+        "梗梗"
+      ]
     },
     {
       "id": "hakone-2011",
@@ -87,7 +96,9 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2011-01-26T03:13:00.000Z"
+      "createdAt": "2011-01-26T03:13:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "austria-czech-2010",
@@ -111,7 +122,9 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2010-07-31T03:44:00.000Z"
+      "createdAt": "2010-07-31T03:44:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "japan-2018",
@@ -174,7 +187,14 @@
         }
       ],
       "photos": [],
-      "createdAt": "2018-10-01T00:00:00.000Z"
+      "createdAt": "2018-10-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": [
+        "76",
+        "DADA",
+        "梗梗",
+        "我廢"
+      ]
     },
     {
       "id": "russia-2018",
@@ -196,7 +216,9 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2018-01-01T00:00:00.000Z"
+      "createdAt": "2018-01-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "japan-2019",
@@ -264,7 +286,12 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2019-09-01T00:00:00.000Z"
+      "createdAt": "2019-09-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": [
+        "待待",
+        "梗梗"
+      ]
     },
     {
       "id": "germany-2017",
@@ -286,7 +313,9 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2017-01-01T00:00:00.000Z"
+      "createdAt": "2017-01-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "japan-jun-2023",
@@ -309,7 +338,9 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2023-06-01T00:00:00.000Z"
+      "createdAt": "2023-06-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "japan-dec-2024",
@@ -381,7 +412,12 @@
         }
       ],
       "photos": [],
-      "createdAt": "2024-12-01T00:00:00.000Z"
+      "createdAt": "2024-12-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": [
+        "姊",
+        "爸"
+      ]
     },
     {
       "id": "tokyo-may-2024",
@@ -433,7 +469,9 @@
         }
       ],
       "photos": [],
-      "createdAt": "2024-05-01T00:00:00.000Z"
+      "createdAt": "2024-05-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "kansai-2026",
@@ -545,7 +583,9 @@
       "flights": [],
       "stays": [],
       "photos": [],
-      "createdAt": "2016-08-01T00:00:00.000Z"
+      "createdAt": "2016-08-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "fukuoka-2025",
@@ -613,7 +653,9 @@
         }
       ],
       "photos": [],
-      "createdAt": "2025-10-01T00:00:00.000Z"
+      "createdAt": "2025-10-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": []
     },
     {
       "id": "yokohama-kamakura-2026",
@@ -663,7 +705,12 @@
         }
       ],
       "photos": [],
-      "createdAt": "2026-01-01T00:00:00.000Z"
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "withGroup": false,
+      "companions": [
+        "阿閒",
+        "梗梗"
+      ]
     },
     {
       "id": "aurora-pacific-2026",
@@ -786,7 +833,9 @@
         }
       ],
       "photos": [],
-      "createdAt": "2026-09-01T00:00:00.000Z"
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "withGroup": true,
+      "companions": []
     }
   ],
   "photos": []

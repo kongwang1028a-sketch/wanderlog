@@ -39,6 +39,8 @@ export type Trip = {
   startDate: string
   endDate: string
   notes: string
+  withGroup?: boolean
+  companions?: string[]
   stops: Stop[]
   flights: FlightRecord[]
   stays: StayRecord[]

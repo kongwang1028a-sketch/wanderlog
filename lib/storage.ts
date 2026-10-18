@@ -24,6 +24,7 @@ import {
 } from "@/lib/austria-czech-2010-trip"
 import { HAKONE_2011_TITLE, HAKONE_2011_TRIP_ID, createHakone2011Trip } from "@/lib/hakone-2011-trip"
 import { TOKYO_2016_FEB_TITLE, TOKYO_2016_FEB_TRIP_ID, createTokyo2016FebTrip } from "@/lib/tokyo-2016-feb-trip"
+import { PARTY } from "@/lib/companions"
 import { applyPrivacyToTrip } from "@/lib/privacy"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
@@ -48,6 +49,7 @@ const HAKONE_2011_FOCUS_FLAG = "travel-footprints-hakone-2011-focused"
 const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
 const TITLE_FORMAT_FLAG = "travel-footprints-title-format-v1"
 const PRIVACY_FLAG = "travel-footprints-privacy-v1"
+const COMPANIONS_FLAG = "travel-footprints-companions-v1"
 const STANDARD_TITLES: Record<string, string> = {
   [AURORA_TRIP_ID]: AURORA_TITLE,
   [YOKOHAMA_TRIP_ID]: YOKOHAMA_TITLE,
@@ -183,6 +185,7 @@ export function subscribeTrips(listener: () => void) {
   ensureTokyo2016FebTrip()
   applyStandardTitlesOnce()
   applyPrivacyOnce()
+  applyCompanionsOnce()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -737,6 +740,47 @@ function applyPrivacyOnce() {
   }
 }
 
+function applyCompanionsOnce() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(COMPANIONS_FLAG) === "1") return
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      let changed = false
+      const next = parsed.map((item) => {
+        if (!isTrip(item)) return item
+        const known = PARTY[item.id]
+        if (!known) return item
+        const companionsMissing = !Array.isArray(item.companions)
+        const groupMissing = typeof item.withGroup !== "boolean"
+        if (!companionsMissing && !groupMissing) return item
+        changed = true
+        return {
+          ...item,
+          companions: companionsMissing ? known.companions : item.companions,
+          withGroup: groupMissing ? known.withGroup : item.withGroup,
+        }
+      })
+      if (!changed) continue
+      localStorage.setItem(key, JSON.stringify(next))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
+    }
+  }
+  localStorage.setItem(COMPANIONS_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
+  }
+}
+
 function isUnownedJapan2019FebTrip(trip: Trip) {
   return trip.id === "japan-2019-feb" || (trip.title === "2019年2月 東京" && trip.startDate === "2019-02-04")
 }
@@ -848,10 +892,25 @@ function parseTrips(raw: string): Trip[] {
   }
 }
 
+function normalizeCompanions(value: unknown) {
+  if (!Array.isArray(value)) return []
+  const names: string[] = []
+  for (const item of value) {
+    if (typeof item !== "string") continue
+    const name = item.trim().slice(0, 24)
+    if (!name || names.includes(name)) continue
+    names.push(name)
+    if (names.length >= 40) break
+  }
+  return names
+}
+
 function normalizeTrip(trip: Trip): Trip {
   const raw = trip as Trip & { flights?: unknown; stays?: unknown }
   return {
     ...trip,
+    withGroup: trip.withGroup === true,
+    companions: normalizeCompanions(trip.companions),
     flights: Array.isArray(raw.flights) ? raw.flights.flatMap(normalizeFlight) : [],
     stays: Array.isArray(raw.stays) ? raw.stays.flatMap(normalizeStay) : [],
   }

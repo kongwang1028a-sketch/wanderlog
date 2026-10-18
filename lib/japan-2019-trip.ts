@@ -1,3 +1,4 @@
+import { partyFor } from "@/lib/companions"
 import { cityById, type City } from "@/lib/cities"
 import type { Stop, Trip } from "@/lib/types"
 
@@ -31,6 +32,7 @@ export function createJapan2019Trip(): Trip | null {
     startDate: "2019-09-28",
     endDate: "2019-10-05",
     notes: "同行：待待、梗梗。沒有飯店名稱，也沒有航班編號。",
+    ...partyFor(JAPAN_2019_TRIP_ID),
     stops: [
       placed(
         "japan-2019-tokyo",

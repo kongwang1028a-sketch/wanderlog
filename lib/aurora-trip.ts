@@ -1,3 +1,4 @@
+import { partyFor } from "@/lib/companions"
 import { stopFromCity } from "@/lib/geo"
 import { parseItinerary } from "@/lib/itinerary"
 import type { Trip } from "@/lib/types"
@@ -32,6 +33,7 @@ export function createAuroraTrip(): Trip | null {
     startDate: parsed.startDate,
     endDate: parsed.endDate,
     notes: "10/2 在飛機上跨越國際換日線，10/3 抵達台灣。",
+    ...partyFor(AURORA_TRIP_ID),
     stops,
     flights: [],
     stays: [{ id: `${AURORA_TRIP_ID}-ship`, name: "星辰公主號", stopId: shipStop?.id }],

@@ -19,6 +19,7 @@ import { MemoryImportDialog } from "@/components/memory-import"
 import { TraceImportDialog, type TraceImport } from "@/components/trace-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
+import { companionNames } from "@/lib/companions"
 import { createDemoTrips } from "@/lib/demo"
 import { publishActiveBook, reconcilePublishedBook, type LiveSyncResult } from "@/lib/live-sync"
 import { formatRange, isWholeMonth, isWholeYear, totalTravelDays } from "@/lib/format"
@@ -102,6 +103,7 @@ export function TravelApp() {
   const [pendingPick, setPendingPick] = useState<{ lat: number; lng: number } | null>(null)
   const [year, setYear] = useState("all")
   const [query, setQuery] = useState("")
+  const [companion, setCompanion] = useState("all")
   const [toast, setToast] = useState<string | null>(null)
   const [syncNote, setSyncNote] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -132,7 +134,7 @@ export function TravelApp() {
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
     let staticBundle = bundle
     if (!staticBundle) {
-      const response = await fetch(`${base}/data/footprints.json?v=privacy-mask`, { cache: "no-store" })
+      const response = await fetch(`${base}/data/footprints.json?v=companions`, { cache: "no-store" })
       if (!response.ok) throw new Error("static")
       const parsed = (await response.json()) as Partial<ExportBundle>
       if (!parsed || !Array.isArray(parsed.trips)) throw new Error("static")
@@ -157,7 +159,7 @@ export function TravelApp() {
     let cancel = false
     void (async () => {
       try {
-        const response = await fetch(`${base}/data/footprints.json?v=privacy-mask`, { cache: "no-store" })
+        const response = await fetch(`${base}/data/footprints.json?v=companions`, { cache: "no-store" })
         if (!response.ok || cancel) return
         const parsed = (await response.json()) as Partial<ExportBundle>
         if (!parsed || !Array.isArray(parsed.trips) || cancel) return
@@ -276,15 +278,20 @@ export function TravelApp() {
     [trips],
   )
 
+  const people = useMemo(() => companionNames(trips), [trips])
+
   const filtered = useMemo(() => {
     const lowered = query.trim().toLowerCase()
     return trips
       .filter((trip) => (year === "all" ? true : trip.startDate.startsWith(year)))
+      .filter((trip) => companion === "all" || (trip.companions ?? []).includes(companion))
       .filter((trip) => {
         if (!lowered) return true
         const haystack = [
           trip.title,
           trip.notes,
+          trip.withGroup ? "旅行團" : "",
+          ...(trip.companions ?? []),
           ...trip.stops.flatMap((stop) => [stop.name, stop.country, stop.note ?? ""]),
         ]
           .join(" ")
@@ -293,7 +300,7 @@ export function TravelApp() {
       })
       .slice()
       .sort((a, b) => b.startDate.localeCompare(a.startDate))
-  }, [trips, year, query])
+  }, [trips, year, query, companion])
 
   const pins = useMemo(() => buildPins(filtered), [filtered])
   const selectedTrip = filtered.find((trip) => trip.id === selectedTripId) ?? null
@@ -768,9 +775,21 @@ export function TravelApp() {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="搜尋旅程、城市"
+                  placeholder="搜尋旅程、城市或同行"
                   className="h-10 w-full rounded-xl border bg-card px-3 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/40"
                 />
+                {people.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <FilterChip active={companion === "all"} onClick={() => setCompanion("all")}>
+                      全部同行
+                    </FilterChip>
+                    {people.map((name) => (
+                      <FilterChip key={name} active={companion === name} onClick={() => setCompanion(name)}>
+                        {name}
+                      </FilterChip>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-1.5 overflow-x-auto pb-1">
                   <FilterChip active={year === "all"} onClick={() => setYear("all")}>
                     全部
@@ -794,16 +813,24 @@ export function TravelApp() {
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
                 {filtered.length === 0 ? (
                   <div className="rounded-3xl border border-dashed bg-card px-4 py-8 text-center">
-                    <p className="font-display text-2xl">地圖還是空白的</p>
-                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-                      加一趟旅程，到過的地方就會升起旗幟。過去的旅行可以一次貼上年份和城市，或從手機照片的定位整理出來。
+                    <p className="font-display text-2xl">
+                      {trips.length === 0 ? "地圖還是空白的" : "沒有找到符合的旅程"}
                     </p>
-                    <div className="mt-4 flex flex-col gap-2">
-                      <Button onClick={startCreate}>新增第一趟旅程</Button>
-                      <Button variant="outline" onClick={addDemo}>
-                        放入示範足跡
-                      </Button>
-                    </div>
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
+                      {trips.length === 0
+                        ? "加一趟旅程，到過的地方就會升起旗幟。過去的旅行可以一次貼上年份和城市，或從手機照片的定位整理出來。"
+                        : companion === "all"
+                          ? "換一個關鍵字，或清掉年份。"
+                          : `${companion} 還沒有出現在剩下的旅程裡。`}
+                    </p>
+                    {trips.length === 0 && (
+                      <div className="mt-4 flex flex-col gap-2">
+                        <Button onClick={startCreate}>新增第一趟旅程</Button>
+                        <Button variant="outline" onClick={addDemo}>
+                          放入示範足跡
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   filtered.map((trip) => {
@@ -828,7 +855,7 @@ export function TravelApp() {
                           <span className="mt-2 block text-sm leading-6">
                             {trip.stops.map((stop) => stop.name).join(" → ") || "尚未安排停留"}
                           </span>
-                          <span className="mt-2 flex items-center gap-2 text-base">
+                          <span className="mt-2 flex flex-wrap items-center gap-2 text-base">
                             <span>{codes.map((code) => flagEmoji(code)).join(" ")}</span>
                             {trip.photos.length > 0 && (
                               <Badge variant="secondary">{trip.photos.length} 張照片或連結</Badge>
@@ -843,6 +870,10 @@ export function TravelApp() {
                               </Badge>
                             )}
                             {trip.stays.length > 0 && <Badge variant="secondary">{trip.stays.length} 間旅館</Badge>}
+                            {trip.withGroup && <Badge variant="secondary">旅行團</Badge>}
+                            {(trip.companions ?? []).length > 0 && (
+                              <Badge variant="secondary">{trip.companions?.join("、")}</Badge>
+                            )}
                           </span>
                         </button>
                         <div className="mt-2 flex gap-2">

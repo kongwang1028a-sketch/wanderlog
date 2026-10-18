@@ -1,3 +1,4 @@
+import { partyFor } from "@/lib/companions"
 import { cityById, type City } from "@/lib/cities"
 import type { Stop, Trip } from "@/lib/types"
 
@@ -40,6 +41,7 @@ export function createTokyo2016FebTrip(): Trip | null {
     startDate: "2016-02-29",
     endDate: "2016-03-04",
     notes: "文件標題寫 2015，實際是 2016。五天四夜。丹丹吃漢堡、ㄆㄆ、阿閒、ㄒㄒ、ㄘㄘ、梗梗。飯店日幣24000／4晚，現場付現。迪士尼門票臺幣2050。WiFi 分享器 2 入，一人臺幣417。",
+    ...partyFor(TOKYO_2016_FEB_TRIP_ID),
     stops: [
       tokyoStop,
       placed(

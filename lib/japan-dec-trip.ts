@@ -1,3 +1,4 @@
+import { partyFor } from "@/lib/companions"
 import { cityById } from "@/lib/cities"
 import { stopFromCity } from "@/lib/geo"
 import type { Trip } from "@/lib/types"
@@ -31,6 +32,7 @@ export function createJapanDecemberTrip(): Trip | null {
     startDate: "2024-12-14",
     endDate: "2024-12-21",
     notes: "同行：姊、爸。12/16 從京都退房，12/17 改住東京迪士尼。",
+    ...partyFor(JAPAN_DEC_TRIP_ID),
     stops: [kyoto, disney, lake],
     flights: [],
     stays: [
