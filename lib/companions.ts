@@ -36,7 +36,7 @@ export const PARTY: Record<string, Party> = {
   },
   "japan-2019": {
     withGroup: false,
-    companions: ["待待", "梗梗"],
+    companions: ["阿法", "梗梗"],
   },
   "japan-jun-2023": {
     withGroup: false,

@@ -52,7 +52,7 @@ const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
 const TITLE_FORMAT_FLAG = "travel-footprints-title-format-v1"
 const PRIVACY_FLAG = "travel-footprints-privacy-v1"
 const COMPANIONS_FLAG = "travel-footprints-companions-v1"
-const COMPANION_ROSTER_FLAG = "travel-footprints-companion-roster-v1"
+const COMPANION_ROSTER_FLAG = "travel-footprints-companion-roster-v2"
 const STANDARD_TITLES: Record<string, string> = {
   [AURORA_TRIP_ID]: AURORA_TITLE,
   [YOKOHAMA_TRIP_ID]: YOKOHAMA_TITLE,

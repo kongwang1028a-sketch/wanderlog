@@ -23,7 +23,7 @@ const trips = [
 
 assert.deepEqual(partyFor("tokyo-2016-feb").companions, ["梗梗", "丹丹", "小咩", "萍萍", "慈憶"])
 assert.deepEqual(trips.find((trip) => trip.id === "japan-2018")?.companions, ["76", "DADA", "梗梗"])
-assert.deepEqual(trips.find((trip) => trip.id === "japan-2019")?.companions, ["待待", "梗梗"])
+assert.deepEqual(trips.find((trip) => trip.id === "japan-2019")?.companions, ["阿法", "梗梗"])
 assert.deepEqual(trips.find((trip) => trip.id === "japan-dec-2024")?.companions, ["阿法", "爸", "媽"])
 assert.deepEqual(trips.find((trip) => trip.id === "yokohama-kamakura-2026")?.companions, ["梗梗"])
 assert.equal(trips.find((trip) => trip.id === "aurora-pacific-2026")?.withGroup, true)

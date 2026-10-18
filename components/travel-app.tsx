@@ -134,7 +134,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
     let staticBundle = bundle
     if (!staticBundle) {
-      const response = await fetch(`${base}/data/footprints.json?v=companion-roster`, { cache: "no-store" })
+      const response = await fetch(`${base}/data/footprints.json?v=companion-roster-2`, { cache: "no-store" })
       if (!response.ok) throw new Error("static")
       const parsed = (await response.json()) as Partial<ExportBundle>
       if (!parsed || !Array.isArray(parsed.trips)) throw new Error("static")
@@ -159,7 +159,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     let cancel = false
     void (async () => {
       try {
-        const response = await fetch(`${base}/data/footprints.json?v=companion-roster`, { cache: "no-store" })
+        const response = await fetch(`${base}/data/footprints.json?v=companion-roster-2`, { cache: "no-store" })
         if (!response.ok || cancel) return
         const parsed = (await response.json()) as Partial<ExportBundle>
         if (!parsed || !Array.isArray(parsed.trips) || cancel) return

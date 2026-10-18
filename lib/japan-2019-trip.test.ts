@@ -13,7 +13,7 @@ assert.deepEqual(
 assert.equal(trip.flights.length, 0)
 assert.equal(trip.stays.length, 0)
 const text = `${trip.notes}\n${trip.stops.map((stop) => stop.note).join("\n")}`
-for (const phrase of ["待待", "梗梗", "晴空塔", "水族館", "寶可夢咖啡", "石田屋", "環球影城", "關西空港"]) {
+for (const phrase of ["阿法", "梗梗", "晴空塔", "水族館", "寶可夢咖啡", "石田屋", "環球影城", "關西空港"]) {
   assert.match(text, new RegExp(phrase))
 }
 assert.match(text, /沒有飯店名稱/)
