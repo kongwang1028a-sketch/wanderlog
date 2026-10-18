@@ -20,7 +20,7 @@ export function createYokohamaTrip(): Trip | null {
     title: YOKOHAMA_TITLE,
     startDate: "2026-01-17",
     endDate: "2026-01-20",
-    notes: "同行：玟璇、梗梗。去回都是經濟艙，機上註記 Wifi Magic5，各可累積 931 哩。",
+    notes: "同行：阿閒、梗梗。去回都是經濟艙，機上註記 Wifi Magic5，各可累積 931 哩。",
     stops: [yokohama, kamakura],
     flights: [
       {

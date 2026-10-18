@@ -25,10 +25,8 @@ for (const phrase of [
   "ㄆㄆ",
   "阿閒",
   "梗梗",
-  "11500+75",
   "24000",
   "2050",
-  "2469+37",
   "417",
   "JL802",
   "JL809",
@@ -37,9 +35,8 @@ for (const phrase of [
   "2060",
   "舞濱",
   "吉卜力",
-  "8696069413",
-  "1081461711",
-  "1733",
+  "8696****13",
+  "1081****11",
   "壽々喜園",
   "790",
   "築地",
@@ -47,5 +44,5 @@ for (const phrase of [
 ]) {
   assert.match(text, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))
 }
-assert.doesNotMatch(text, /09\*{5}113/)
+assert.doesNotMatch(text, /09\*{5}113|代墊|刷卡|\d{8,}/)
 console.log("all passed")

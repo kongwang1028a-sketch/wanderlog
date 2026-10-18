@@ -14,12 +14,12 @@ Day 3： 博多東急REI飯店 (近博多站/天神)
 
 ✈️ 航班
 去程
-BR106　[訂位代碼: ECMGRS]
+BR106　[訂位代碼: EC**RS]
 2025年10月23日 (2小時10分鐘)
 08:10 桃園機場(TPE) - 2航廈
 11:20 福岡機場(FUK) - I航廈
 回程
-JX841　[訂位代碼: ECVJ9J]
+JX841　[訂位代碼: EC**9J]
 2025年10月26日 (2小時40分鐘)
 19:10 福岡機場(FUK) - 國際航廈
 20:50 桃園機場(TPE) - 1航廈
@@ -91,18 +91,18 @@ export function createFukuokaTrip(): Trip | null {
     title: FUKUOKA_TITLE,
     startDate: "2025-10-23",
     endDate: "2025-10-26",
-    notes: "去程 BR106，訂位 ECMGRS。回程 JX841，訂位 ECVJ9J。Day 1-2 住博多中央JR九州Blossom酒店，Day 3 住博多東急REI飯店。",
+    notes: "去程 BR106，訂位 EC**RS。回程 JX841，訂位 EC**9J。Day 1-2 住博多中央JR九州Blossom酒店，Day 3 住博多東急REI飯店。",
     stops,
     flights: [
       {
         id: `${FUKUOKA_TRIP_ID}-br106`,
         aircraft: "BR106",
-        route: "10/23 08:10 桃園 T2－11:20 福岡 I航廈・訂位 ECMGRS",
+        route: "10/23 08:10 桃園 T2－11:20 福岡 I航廈・訂位 EC**RS",
       },
       {
         id: `${FUKUOKA_TRIP_ID}-jx841`,
         aircraft: "JX841",
-        route: "10/26 19:10 福岡國際航廈－20:50 桃園 T1・訂位 ECVJ9J",
+        route: "10/26 19:10 福岡國際航廈－20:50 桃園 T1・訂位 EC**9J",
       },
     ],
     stays: [

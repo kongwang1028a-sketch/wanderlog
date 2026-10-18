@@ -21,7 +21,6 @@ for (const phrase of [
   "DADA",
   "梗梗",
   "我廢",
-  "玟璇",
   "桃園 06:40",
   "10:35",
   "臺幣3008",
@@ -43,6 +42,6 @@ for (const phrase of [
 ]) {
   assert.match(text, new RegExp(phrase))
 }
-assert.doesNotMatch(text, /JL\d|NH\d|BR\d/)
+assert.doesNotMatch(text, /JL\d|NH\d|BR\d|代墊|還沒收錢/)
 assert.equal(trip.stops[2]?.cityId, "jp-kawagoe")
 console.log("all passed")

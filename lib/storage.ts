@@ -24,6 +24,7 @@ import {
 } from "@/lib/austria-czech-2010-trip"
 import { HAKONE_2011_TITLE, HAKONE_2011_TRIP_ID, createHakone2011Trip } from "@/lib/hakone-2011-trip"
 import { TOKYO_2016_FEB_TITLE, TOKYO_2016_FEB_TRIP_ID, createTokyo2016FebTrip } from "@/lib/tokyo-2016-feb-trip"
+import { applyPrivacyToTrip } from "@/lib/privacy"
 import { dataUrlToBlob } from "@/lib/images"
 import type { ExportBundle, FlightRecord, PhotoRef, StayRecord, Stop, Trip } from "@/lib/types"
 
@@ -46,6 +47,7 @@ const AUSTRIA_CZECH_2010_FOCUS_FLAG = "travel-footprints-austria-czech-2010-focu
 const HAKONE_2011_FOCUS_FLAG = "travel-footprints-hakone-2011-focused"
 const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
 const TITLE_FORMAT_FLAG = "travel-footprints-title-format-v1"
+const PRIVACY_FLAG = "travel-footprints-privacy-v1"
 const STANDARD_TITLES: Record<string, string> = {
   [AURORA_TRIP_ID]: AURORA_TITLE,
   [YOKOHAMA_TRIP_ID]: YOKOHAMA_TITLE,
@@ -180,6 +182,7 @@ export function subscribeTrips(listener: () => void) {
   ensureHakone2011Trip()
   ensureTokyo2016FebTrip()
   applyStandardTitlesOnce()
+  applyPrivacyOnce()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -694,6 +697,40 @@ function applyStandardTitlesOnce() {
     }
   }
   localStorage.setItem(TITLE_FORMAT_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
+  }
+}
+
+function applyPrivacyOnce() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(PRIVACY_FLAG) === "1") return
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      const trips = parsed.filter(isTrip)
+      let changed = false
+      const next = trips.map((trip) => {
+        const cleaned = applyPrivacyToTrip(trip)
+        if (JSON.stringify(cleaned) === JSON.stringify(trip)) return trip
+        changed = true
+        return cleaned
+      })
+      if (!changed) continue
+      localStorage.setItem(key, JSON.stringify(next))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
+    }
+  }
+  localStorage.setItem(PRIVACY_FLAG, "1")
   if (changedActive) {
     cachedKey = ""
     cachedRaw = null
