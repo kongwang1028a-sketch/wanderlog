@@ -20,7 +20,7 @@ const privateSite = Boolean(process.env.SITE_PASSWORD?.trim())
 
 export const metadata: Metadata = {
   title: "旅遊足跡",
-  description: "在世界地圖上記下每一次出國的路線、景點與照片。",
+  description: "在世界地圖上記下每一次出國的路線、停留與照片。",
   robots: privateSite ? { index: false, follow: false } : undefined,
 };
 

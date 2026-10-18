@@ -3,10 +3,9 @@
 import { Pencil, Trash2, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { PhotoGallery } from "@/components/photo-gallery"
 import { formatDate, formatRange, tripLength } from "@/lib/format"
-import { flagEmoji, resolveSpots, routeDistanceKm } from "@/lib/geo"
+import { flagEmoji, routeDistanceKm } from "@/lib/geo"
 import type { Pin, Stop, Trip } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -84,7 +83,6 @@ function TripBody({
   onFocusStop: (stop: Stop) => void
 }) {
   const focused = trip.stops.find((stop) => stop.id === focusStopId) ?? trip.stops[0]
-  const spots = focused ? resolveSpots(focused) : null
   const distance = routeDistanceKm(trip.stops)
   const countries = [...new Set(trip.stops.map((stop) => stop.countryCode))]
 
@@ -173,13 +171,6 @@ function TripBody({
         </section>
       )}
 
-      {focused && spots && (
-        <section>
-          <h3 className="font-display text-lg">{focused.name}的知名景點</h3>
-          <SpotList spots={spots.spots} source={spots.source} placeLabel={spots.placeLabel} />
-        </section>
-      )}
-
       {trip.notes && (
         <section>
           <h3 className="font-display text-lg">備註</h3>
@@ -202,13 +193,6 @@ function PlaceBody({
   pin: Pin
   onOpenTrip: (tripId: string, stopId: string) => void
 }) {
-  const spots = resolveSpots({
-    cityId: pin.cityId,
-    lat: pin.lat,
-    lng: pin.lng,
-    countryCode: pin.countryCode,
-  })
-
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
@@ -238,50 +222,6 @@ function PlaceBody({
         </ul>
         <p className="mt-2 text-xs text-muted-foreground">每一列是那次停在這裡的景點。點進去會畫出整趟路線。</p>
       </section>
-      <Separator />
-      <section>
-        <h3 className="font-display text-lg">{pin.name}的知名景點</h3>
-        <SpotList spots={spots.spots} source={spots.source} placeLabel={spots.placeLabel} />
-      </section>
-    </div>
-  )
-}
-
-function SpotList({
-  spots,
-  source,
-  placeLabel,
-}: {
-  spots: { name: string; blurb: string }[]
-  source: "city" | "nearby" | "country" | "none"
-  placeLabel: string
-}) {
-  if (source === "none" || spots.length === 0) {
-    return (
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        這個地點還沒有收錄景點。可以在停留備註裡寫下你自己記得的地方。
-      </p>
-    )
-  }
-
-  return (
-    <div className="mt-2 space-y-2">
-      {source === "nearby" && (
-        <p className="text-xs leading-5 text-muted-foreground">
-          座標靠近{placeLabel}，以下是那裡常被拜訪的地方。
-        </p>
-      )}
-      {source === "country" && (
-        <p className="text-xs leading-5 text-muted-foreground">
-          這附近還沒有收錄特定城市，先列出這個國家常被提到的去處，不一定就在你停留的旁邊。
-        </p>
-      )}
-      {spots.map((spot) => (
-        <article key={spot.name} className="rounded-2xl bg-secondary px-3 py-2.5">
-          <h4 className="font-medium">{spot.name}</h4>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">{spot.blurb}</p>
-        </article>
-      ))}
     </div>
   )
 }

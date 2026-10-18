@@ -1,10 +1,4 @@
-import {
-  CITIES,
-  COUNTRY_SPOTS,
-  cityById,
-  type City,
-  type Spot,
-} from "@/lib/cities"
+import { CITIES, cityById, type City } from "@/lib/cities"
 import type { Pin, Stop, Trip } from "@/lib/types"
 
 const CITY_RADIUS_M = 15_000
@@ -228,28 +222,6 @@ export function routeDistanceKm(stops: Pick<Stop, "lat" | "lng">[]) {
     total += haversineKm(previous.lat, previous.lng, current.lat, current.lng)
   }
   return Math.round(total)
-}
-
-export function resolveSpots(stop: Pick<Stop, "cityId" | "lat" | "lng" | "countryCode">): {
-  spots: Spot[]
-  source: "city" | "nearby" | "country" | "none"
-  placeLabel: string
-} {
-  if (stop.cityId) {
-    const city = cityById(stop.cityId)
-    if (city && city.spots.length > 0) {
-      return { spots: city.spots, source: "city", placeLabel: city.zh }
-    }
-  }
-  const nearby = nearestCity(stop.lat, stop.lng, 40)
-  if (nearby && nearby.spots.length > 0) {
-    return { spots: nearby.spots, source: "nearby", placeLabel: nearby.zh }
-  }
-  const countrySpots = COUNTRY_SPOTS[stop.countryCode.toUpperCase()]
-  if (countrySpots && countrySpots.length > 0) {
-    return { spots: countrySpots, source: "country", placeLabel: "" }
-  }
-  return { spots: [], source: "none", placeLabel: "" }
 }
 
 export function stopFromCity(city: City, date?: string, note?: string): Stop {

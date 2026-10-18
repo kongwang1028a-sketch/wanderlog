@@ -940,7 +940,7 @@ export function TravelApp() {
               <div className="pointer-events-auto absolute inset-x-4 bottom-6 mx-auto max-w-sm rounded-3xl bg-card p-4 shadow-xl md:bottom-16">
                 <p className="font-display text-2xl">從這裡開始</p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  旗幟會標上去過的年份。點開會看到那次的路線，以及當地常被提到的景點。
+                  旗幟會標上去過的年份。點開會看到那次的路線和你記下的停留。
                 </p>
                 <Button className="mt-3 w-full" onClick={startCreate}>
                   記錄一趟旅程

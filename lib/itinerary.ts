@@ -1,4 +1,5 @@
 import { CITIES, cityById, type City } from "@/lib/cities"
+import { SPOT_NEEDLES } from "@/lib/spot-needles"
 
 export type ParsedStop = {
   city: City
@@ -617,11 +618,11 @@ function stripBullet(line: string) {
 function buildNeedles() {
   const list: Needle[] = []
   const spotOwners = new Map<string, Set<string>>()
-  for (const city of CITIES) {
-    for (const spot of city.spots) {
-      const owners = spotOwners.get(spot.name) ?? new Set<string>()
-      owners.add(city.id)
-      spotOwners.set(spot.name, owners)
+  for (const [cityId, names] of Object.entries(SPOT_NEEDLES)) {
+    for (const name of names) {
+      const owners = spotOwners.get(name) ?? new Set<string>()
+      owners.add(cityId)
+      spotOwners.set(name, owners)
     }
   }
   const add = (text: string, city: City, kind: PlaceKind) => {
@@ -635,10 +636,10 @@ function buildNeedles() {
     if (city.en.length >= 3) add(city.en, city, "city")
     for (const alias of city.aliases ?? []) add(alias, city, "city")
     for (const extra of EXTRA_NAMES[city.id] ?? []) add(extra, city, "city")
-    for (const spot of city.spots) {
-      if (spot.name.length < 3) continue
-      if ((spotOwners.get(spot.name)?.size ?? 0) !== 1) continue
-      add(spot.name, city, "spot")
+    for (const name of SPOT_NEEDLES[city.id] ?? []) {
+      if (name.length < 3) continue
+      if ((spotOwners.get(name)?.size ?? 0) !== 1) continue
+      add(name, city, "spot")
     }
   }
   for (const airport of AIRPORTS) {
