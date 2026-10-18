@@ -40,6 +40,7 @@ const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
 const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const JAPAN_JUN_2023_FOCUS_FLAG = "travel-footprints-japan-jun-2023-focused"
 const JAPAN_JUN_2023_ITINERARY_FLAG = "travel-footprints-japan-jun-2023-itinerary-v1"
+const JAPAN_JUN_2023_FLIGHTS_FLAG = "travel-footprints-japan-jun-2023-flights-v1"
 const GERMANY_2017_FOCUS_FLAG = "travel-footprints-germany-2017-focused"
 const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
 const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
@@ -188,6 +189,7 @@ export function subscribeTrips(listener: () => void) {
   applyPrivacyOnce()
   applyCompanionsOnce()
   applyJapanJun2023ItineraryOnce()
+  applyJapanJun2023FlightsOnce()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -771,6 +773,49 @@ function applyJapanJun2023ItineraryOnce() {
     }
   }
   localStorage.setItem(JAPAN_JUN_2023_ITINERARY_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
+  }
+}
+
+function applyJapanJun2023FlightsOnce() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(JAPAN_JUN_2023_FLIGHTS_FLAG) === "1") return
+  const created = createJapanJun2023Trip()
+  const notesById = new Map(created.stops.map((stop) => [stop.id, stop.note]))
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      const trips = parsed.filter(isTrip)
+      let changed = false
+      const next = trips.map((trip) => {
+        if (trip.id !== JAPAN_JUN_2023_TRIP_ID) return trip
+        if (trip.flights.some((flight) => flight.aircraft === "BR178")) return trip
+        changed = true
+        return {
+          ...trip,
+          flights: created.flights,
+          stops: trip.stops.map((stop) => {
+            const note = notesById.get(stop.id)
+            return note ? { ...stop, note } : stop
+          }),
+        }
+      })
+      if (!changed) continue
+      localStorage.setItem(key, JSON.stringify(next))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
+    }
+  }
+  localStorage.setItem(JAPAN_JUN_2023_FLIGHTS_FLAG, "1")
   if (changedActive) {
     cachedKey = ""
     cachedRaw = null

@@ -14,12 +14,16 @@ assert.deepEqual(japan.companions, ["梗梗", "丹丹", "小咩(ㄒㄒ)"])
 assert.equal(japan.withGroup, false)
 assert.deepEqual(
   japan.flights.map((flight) => `${flight.aircraft} ${flight.route}`),
-  ["去程 6/2 6:30–10:10 到大阪", "回程 6/5 18:30–20:30 到台灣"],
+  [
+    "BR178 6/2 06:30 桃園 T2－10:10 關西 T1・A330-300・經濟艙 S・基本・直飛",
+    "BR129 6/5 18:30 關西 T1－20:30 桃園 T2・787-10・經濟艙 Q・經典・直飛",
+  ],
 )
 assert.deepEqual(
   japan.stays.map((stay) => stay.name),
   ["MIMARU 難波 STATION"],
 )
+assert.match(japan.stops[0]?.note ?? "", /BR178 06:30 桃園 T2－10:10 關西 T1/)
 assert.match(japan.stops[0]?.note ?? "", /大阪天守閣/)
 assert.match(japan.stops[0]?.note ?? "", /18:00 力丸道頓堀吃到飽燒烤/)
 assert.match(japan.stops[1]?.note ?? "", /海遊館/)
@@ -29,9 +33,9 @@ assert.match(japan.stops[2]?.note ?? "", /環球影城/)
 assert.match(japan.stops[2]?.note ?? "", /9:00–21:00/)
 assert.match(japan.stops[2]?.note ?? "", /晚餐園區隨便吃（\?）/)
 assert.match(japan.stops[3]?.note ?? "", /難波八阪神社/)
-assert.match(japan.stops[3]?.note ?? "", /18:30–20:30 飛機回台灣/)
+assert.match(japan.stops[3]?.note ?? "", /BR129 18:30 關西 T1－20:30 桃園 T2/)
 assert.doesNotMatch(japan.notes, /詳細行程還沒找到/)
-assert.doesNotMatch(`${japan.notes} ${japan.stops.map((stop) => stop.note).join(" ")}`, /JL|BR|JX/)
+assert.doesNotMatch(`${japan.notes} ${japan.flights.map((flight) => flight.aircraft).join(" ")}`, /JL|JX|BR106/)
 
 const germany = createGermany2017Trip()
 assert.equal(germany.title, "2017年 德國")

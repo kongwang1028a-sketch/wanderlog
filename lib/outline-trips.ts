@@ -32,7 +32,7 @@ export function createJapanJun2023Trip(): Trip {
     "japan-jun-2023-osaka-0602",
     osaka,
     "2023-06-02",
-    "6:30–10:10 飛機到大阪。早餐飛機餐。午餐大阪天守閣。18:00 力丸道頓堀吃到飽燒烤。住 MIMARU 難波 STATION。",
+    "BR178 06:30 桃園 T2－10:10 關西 T1。早餐飛機餐。午餐大阪天守閣。18:00 力丸道頓堀吃到飽燒烤。住 MIMARU 難波 STATION。",
   )
   return {
     id: JAPAN_JUN_2023_TRIP_ID,
@@ -59,12 +59,20 @@ export function createJapanJun2023Trip(): Trip {
         "japan-jun-2023-osaka-0605",
         osaka,
         "2023-06-05",
-        "早餐難波八阪神社。晚餐飛機餐。18:30–20:30 飛機回台灣。",
+        "早餐難波八阪神社。晚餐飛機餐。BR129 18:30 關西 T1－20:30 桃園 T2。",
       ),
     ],
     flights: [
-      { id: "japan-jun-2023-out", aircraft: "去程", route: "6/2 6:30–10:10 到大阪" },
-      { id: "japan-jun-2023-back", aircraft: "回程", route: "6/5 18:30–20:30 到台灣" },
+      {
+        id: "japan-jun-2023-br178",
+        aircraft: "BR178",
+        route: "6/2 06:30 桃園 T2－10:10 關西 T1・A330-300・經濟艙 S・基本・直飛",
+      },
+      {
+        id: "japan-jun-2023-br129",
+        aircraft: "BR129",
+        route: "6/5 18:30 關西 T1－20:30 桃園 T2・787-10・經濟艙 Q・經典・直飛",
+      },
     ],
     stays: [{ id: "japan-jun-2023-mimaru", name: "MIMARU 難波 STATION", stopId: arrival.id }],
     photos: [],
