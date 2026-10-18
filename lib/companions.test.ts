@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
-import { companionNames, mergeCompanions, partyFor, splitCompanionNames } from "./companions"
+import { companionMatches, companionNames, mergeCompanions, partyFor, splitCompanionNames } from "./companions"
+import { createJapanJun2023Trip } from "./outline-trips"
 import { createAuroraTrip } from "./aurora-trip"
 import { createJapan2018Trip } from "./japan-2018-tokyo-trip"
 import { createJapan2019Trip } from "./japan-2019-trip"
@@ -17,6 +18,7 @@ const trips = [
   createJapanDecemberTrip(),
   createYokohamaTrip(),
   createAuroraTrip(),
+  createJapanJun2023Trip(),
 ].filter((trip) => trip !== null)
 
 assert.deepEqual(partyFor("tokyo-2016-feb").companions, ["丹丹吃漢堡", "ㄆㄆ", "阿閒", "ㄒㄒ", "ㄘㄘ", "梗梗"])
@@ -26,9 +28,13 @@ assert.deepEqual(trips.find((trip) => trip.id === "japan-dec-2024")?.companions,
 assert.deepEqual(trips.find((trip) => trip.id === "yokohama-kamakura-2026")?.companions, ["阿閒", "梗梗"])
 assert.equal(trips.find((trip) => trip.id === "aurora-pacific-2026")?.withGroup, true)
 assert.deepEqual(trips.find((trip) => trip.id === "aurora-pacific-2026")?.companions, [])
+assert.deepEqual(partyFor("japan-jun-2023").companions, ["梗梗", "丹丹", "小咩(ㄒㄒ)"])
+assert.equal(companionMatches(["小咩(ㄒㄒ)"], "ㄒㄒ"), true)
+assert.equal(companionMatches(["小咩(ㄒㄒ)"], "小咩"), true)
+assert.equal(companionMatches(["丹丹吃漢堡"], "丹丹"), false)
 assert.equal(
-  trips.filter((trip) => trip.companions?.includes("梗梗")).length,
-  4,
+  trips.filter((trip) => companionMatches(trip.companions, "梗梗")).length,
+  5,
 )
 assert.equal(companionNames(trips)[0], "梗梗")
 console.log("all passed")

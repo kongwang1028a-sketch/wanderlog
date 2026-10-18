@@ -30,6 +30,10 @@ export const PARTY: Record<string, Party> = {
     withGroup: true,
     companions: [],
   },
+  "japan-jun-2023": {
+    withGroup: false,
+    companions: ["梗梗", "丹丹", "小咩(ㄒㄒ)"],
+  },
 }
 
 export function partyFor(id: string): Party {
@@ -52,6 +56,17 @@ export function mergeCompanions(current: string[], incoming: string[]) {
     if (!next.includes(name)) next.push(name)
   }
   return next.slice(0, 40)
+}
+
+export function companionAliases(name: string) {
+  const aliases = [name]
+  const wrapped = name.match(/^(.+?)\(([^()]+)\)$/)
+  if (wrapped?.[1] && wrapped[2]) aliases.push(wrapped[1], wrapped[2])
+  return aliases
+}
+
+export function companionMatches(companions: string[] | undefined, name: string) {
+  return (companions ?? []).some((companion) => companionAliases(companion).includes(name))
 }
 
 export function companionNames(trips: Trip[]) {

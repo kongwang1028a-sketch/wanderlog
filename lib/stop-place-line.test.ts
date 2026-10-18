@@ -42,6 +42,16 @@ assert.equal(
   "迪士尼",
 )
 assert.equal(stopPlaceLine("7:45 池袋接駁車日幣1000。9:00 入園。", "東京迪士尼"), "迪士尼")
+assert.equal(
+  stopPlaceLine("午餐大阪天守閣。18:00 力丸道頓堀吃到飽燒烤。", "大阪"),
+  "大阪天守閣、道頓堀",
+)
+assert.equal(
+  stopPlaceLine("海遊館。午餐天保山市場街、難波美食小巷。梅田。", "大阪"),
+  "海遊館、天保山市場街、難波美食小巷、梅田",
+)
+assert.equal(stopPlaceLine("環球影城，開園 9:00–21:00。", "大阪"), "環球影城")
+assert.equal(stopPlaceLine("早餐難波八阪神社。", "大阪"), "難波八阪神社")
 
 const disney = buildPins(bundle.trips).find((pin) => pin.name === "東京迪士尼")
 assert.ok(disney)

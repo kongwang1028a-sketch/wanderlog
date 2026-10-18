@@ -19,7 +19,7 @@ import { MemoryImportDialog } from "@/components/memory-import"
 import { TraceImportDialog, type TraceImport } from "@/components/trace-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
-import { companionNames } from "@/lib/companions"
+import { companionMatches, companionNames } from "@/lib/companions"
 import { createDemoTrips } from "@/lib/demo"
 import { publishActiveBook, reconcilePublishedBook, type LiveSyncResult } from "@/lib/live-sync"
 import { formatRange, isWholeMonth, isWholeYear, totalTravelDays } from "@/lib/format"
@@ -134,7 +134,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
     let staticBundle = bundle
     if (!staticBundle) {
-      const response = await fetch(`${base}/data/footprints.json?v=companions`, { cache: "no-store" })
+      const response = await fetch(`${base}/data/footprints.json?v=japan-jun-2023`, { cache: "no-store" })
       if (!response.ok) throw new Error("static")
       const parsed = (await response.json()) as Partial<ExportBundle>
       if (!parsed || !Array.isArray(parsed.trips)) throw new Error("static")
@@ -159,7 +159,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     let cancel = false
     void (async () => {
       try {
-        const response = await fetch(`${base}/data/footprints.json?v=companions`, { cache: "no-store" })
+        const response = await fetch(`${base}/data/footprints.json?v=japan-jun-2023`, { cache: "no-store" })
         if (!response.ok || cancel) return
         const parsed = (await response.json()) as Partial<ExportBundle>
         if (!parsed || !Array.isArray(parsed.trips) || cancel) return
@@ -284,7 +284,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     const lowered = query.trim().toLowerCase()
     return trips
       .filter((trip) => (year === "all" ? true : trip.startDate.startsWith(year)))
-      .filter((trip) => companion === "all" || (trip.companions ?? []).includes(companion))
+      .filter((trip) => companion === "all" || companionMatches(trip.companions, companion))
       .filter((trip) => {
         if (!lowered) return true
         const haystack = [

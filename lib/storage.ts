@@ -39,6 +39,7 @@ const KANSAI_MAP_FLAG = "travel-footprints-kansai-2016-map"
 const TOKYO_MAY_FOCUS_FLAG = "travel-footprints-tokyo-may-focused"
 const JAPAN_DEC_FOCUS_FLAG = "travel-footprints-japan-dec-focused"
 const JAPAN_JUN_2023_FOCUS_FLAG = "travel-footprints-japan-jun-2023-focused"
+const JAPAN_JUN_2023_ITINERARY_FLAG = "travel-footprints-japan-jun-2023-itinerary-v1"
 const GERMANY_2017_FOCUS_FLAG = "travel-footprints-germany-2017-focused"
 const JAPAN_2019_FOCUS_FLAG = "travel-footprints-japan-2019-focused"
 const RUSSIA_2018_FOCUS_FLAG = "travel-footprints-russia-2018-focused"
@@ -186,6 +187,7 @@ export function subscribeTrips(listener: () => void) {
   applyStandardTitlesOnce()
   applyPrivacyOnce()
   applyCompanionsOnce()
+  applyJapanJun2023ItineraryOnce()
   cachedKey = ""
   cachedRaw = null
   listeners.add(listener)
@@ -734,6 +736,41 @@ function applyPrivacyOnce() {
     }
   }
   localStorage.setItem(PRIVACY_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
+  }
+}
+
+function applyJapanJun2023ItineraryOnce() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(JAPAN_JUN_2023_ITINERARY_FLAG) === "1") return
+  const created = createJapanJun2023Trip()
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      const trips = parsed.filter(isTrip)
+      let changed = false
+      const next = trips.map((trip) => {
+        if (!sameJapanJun2023Trip(trip)) return trip
+        if (trip.stops.some((stop) => stop.id === "japan-jun-2023-osaka-0602")) return trip
+        changed = true
+        return { ...created, photos: trip.photos }
+      })
+      if (!changed) continue
+      localStorage.setItem(key, JSON.stringify(next))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
+    }
+  }
+  localStorage.setItem(JAPAN_JUN_2023_ITINERARY_FLAG, "1")
   if (changedActive) {
     cachedKey = ""
     cachedRaw = null
