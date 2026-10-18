@@ -52,6 +52,7 @@ const TOKYO_2016_FEB_FOCUS_FLAG = "travel-footprints-tokyo-2016-feb-focused"
 const TITLE_FORMAT_FLAG = "travel-footprints-title-format-v1"
 const PRIVACY_FLAG = "travel-footprints-privacy-v1"
 const COMPANIONS_FLAG = "travel-footprints-companions-v1"
+const COMPANION_ROSTER_FLAG = "travel-footprints-companion-roster-v1"
 const STANDARD_TITLES: Record<string, string> = {
   [AURORA_TRIP_ID]: AURORA_TITLE,
   [YOKOHAMA_TRIP_ID]: YOKOHAMA_TITLE,
@@ -188,6 +189,7 @@ export function subscribeTrips(listener: () => void) {
   applyStandardTitlesOnce()
   applyPrivacyOnce()
   applyCompanionsOnce()
+  applyCompanionRosterOnce()
   applyJapanJun2023ItineraryOnce()
   applyJapanJun2023FlightsOnce()
   cachedKey = ""
@@ -738,6 +740,43 @@ function applyPrivacyOnce() {
     }
   }
   localStorage.setItem(PRIVACY_FLAG, "1")
+  if (changedActive) {
+    cachedKey = ""
+    cachedRaw = null
+  }
+}
+
+function applyCompanionRosterOnce() {
+  if (typeof localStorage === "undefined") return
+  if (localStorage.getItem(COMPANION_ROSTER_FLAG) === "1") return
+  const keys = new Set<string>([LEGACY_TRIP_KEY])
+  for (const book of readBookStore()?.books ?? []) keys.add(tripStorageKey(book.id))
+  let changedActive = false
+  for (const key of keys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) continue
+      let changed = false
+      const next = parsed.map((item) => {
+        if (!isTrip(item)) return item
+        const known = PARTY[item.id]
+        if (!known) return item
+        const sameCompanions = JSON.stringify(item.companions ?? []) === JSON.stringify(known.companions)
+        const sameGroup = item.withGroup === known.withGroup
+        if (sameCompanions && sameGroup) return item
+        changed = true
+        return { ...item, companions: known.companions, withGroup: known.withGroup }
+      })
+      if (!changed) continue
+      localStorage.setItem(key, JSON.stringify(next))
+      if (key === currentTripKey()) changedActive = true
+    } catch {
+      continue
+    }
+  }
+  localStorage.setItem(COMPANION_ROSTER_FLAG, "1")
   if (changedActive) {
     cachedKey = ""
     cachedRaw = null

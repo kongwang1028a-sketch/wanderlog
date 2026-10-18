@@ -10,7 +10,7 @@ assert.ok(yokohama)
 const renamed = applyPrivacyToTrip({ ...yokohama, title: "自訂標題", notes: "舊的備註" })
 assert.equal(renamed.title, "自訂標題")
 assert.equal(renamed.notes, yokohama.notes)
-assert.match(renamed.notes, /阿閒/)
+assert.match(renamed.notes, /梗梗/)
 
 const december = createJapanDecemberTrip()
 assert.ok(december)
@@ -24,8 +24,9 @@ assert.deepEqual(
   stale.stops.map((stop) => stop.note),
   december.stops.map((stop) => stop.note),
 )
-assert.match(stale.notes, /姊/)
+assert.match(stale.notes, /阿法/)
 assert.match(stale.notes, /爸/)
+assert.match(stale.notes, /媽/)
 
 const japan2019 = createJapan2019Trip()
 assert.ok(japan2019)

@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-18T15:35:00.000Z",
+  "exportedAt": "2026-10-18T16:45:00.000Z",
   "trips": [
     {
       "id": "tokyo-2016-feb",
       "title": "2016年2月 東京",
       "startDate": "2016-02-29",
       "endDate": "2016-03-04",
-      "notes": "文件標題寫 2015，實際是 2016。五天四夜。丹丹吃漢堡、ㄆㄆ、阿閒、ㄒㄒ、ㄘㄘ、梗梗。飯店日幣24000／4晚，現場付現。迪士尼門票臺幣2050。WiFi 分享器 2 入，一人臺幣417。",
+      "notes": "文件標題寫 2015，實際是 2016。五天四夜。梗梗、丹丹、小咩、萍萍、慈憶。飯店日幣24000／4晚，現場付現。迪士尼門票臺幣2050。WiFi 分享器 2 入，一人臺幣417。",
       "stops": [
         {
           "id": "tokyo-2016-feb-tokyo",
@@ -66,12 +66,11 @@
       "createdAt": "2016-02-01T00:00:00.000Z",
       "withGroup": false,
       "companions": [
-        "丹丹吃漢堡",
-        "ㄆㄆ",
-        "阿閒",
-        "ㄒㄒ",
-        "ㄘㄘ",
-        "梗梗"
+        "梗梗",
+        "丹丹",
+        "小咩",
+        "萍萍",
+        "慈憶"
       ]
     },
     {
@@ -98,7 +97,11 @@
       "photos": [],
       "createdAt": "2011-01-26T03:13:00.000Z",
       "withGroup": false,
-      "companions": []
+      "companions": [
+        "阿法",
+        "爸",
+        "媽"
+      ]
     },
     {
       "id": "austria-czech-2010",
@@ -123,15 +126,19 @@
       "stays": [],
       "photos": [],
       "createdAt": "2010-07-31T03:44:00.000Z",
-      "withGroup": false,
-      "companions": []
+      "withGroup": true,
+      "companions": [
+        "阿法",
+        "爸",
+        "媽"
+      ]
     },
     {
       "id": "japan-2018",
       "title": "2018年10月 東京川越",
       "startDate": "2018-10-28",
       "endDate": "2018-11-02",
-      "notes": "76、DADA、梗梗、我廢。住北池袋 Buku Tokyo 東京日租。表上沒有航班編號。總花費臺幣11438、日幣23959。表上另有ふらんす亭，奈葉合作餐廳，入場費日幣1080，沒有排在哪一天。",
+      "notes": "76、DADA、梗梗。住北池袋 Buku Tokyo 東京日租。表上沒有航班編號。總花費臺幣11438、日幣23959。表上另有ふらんす亭，奈葉合作餐廳，入場費日幣1080，沒有排在哪一天。",
       "stops": [
         {
           "id": "japan-2018-tokyo",
@@ -192,8 +199,7 @@
       "companions": [
         "76",
         "DADA",
-        "梗梗",
-        "我廢"
+        "梗梗"
       ]
     },
     {
@@ -217,8 +223,12 @@
       "stays": [],
       "photos": [],
       "createdAt": "2018-01-01T00:00:00.000Z",
-      "withGroup": false,
-      "companions": []
+      "withGroup": true,
+      "companions": [
+        "阿法",
+        "爸",
+        "媽"
+      ]
     },
     {
       "id": "japan-2019",
@@ -314,20 +324,24 @@
       "stays": [],
       "photos": [],
       "createdAt": "2017-01-01T00:00:00.000Z",
-      "withGroup": false,
-      "companions": []
+      "withGroup": true,
+      "companions": [
+        "阿法",
+        "爸",
+        "媽"
+      ]
     },
     {
       "id": "japan-jun-2023",
       "title": "2023年6月 大阪 (4天3夜)",
       "startDate": "2023-06-02",
       "endDate": "2023-06-05",
-      "notes": "同行：梗梗、丹丹、小咩(ㄒㄒ)。6/2–6/4 住 MIMARU 難波 STATION。",
+      "notes": "同行：梗梗、丹丹、小咩。6/2–6/4 住 MIMARU 難波 STATION。",
       "withGroup": false,
       "companions": [
         "梗梗",
         "丹丹",
-        "小咩(ㄒㄒ)"
+        "小咩"
       ],
       "stops": [
         {
@@ -402,7 +416,7 @@
       "title": "2024年12月 京都東京",
       "startDate": "2024-12-14",
       "endDate": "2024-12-21",
-      "notes": "同行：姊、爸。12/16 從京都退房，12/17 改住東京迪士尼。",
+      "notes": "同行：阿法、爸、媽。12/16 從京都退房，12/17 改住東京迪士尼。",
       "stops": [
         {
           "id": "892b54db-8842-4939-bc6c-4263b8d62607",
@@ -470,8 +484,9 @@
       "createdAt": "2024-12-01T00:00:00.000Z",
       "withGroup": false,
       "companions": [
-        "姊",
-        "爸"
+        "阿法",
+        "爸",
+        "媽"
       ]
     },
     {
@@ -526,7 +541,11 @@
       "photos": [],
       "createdAt": "2024-05-01T00:00:00.000Z",
       "withGroup": false,
-      "companions": []
+      "companions": [
+        "阿法",
+        "孟君",
+        "76"
+      ]
     },
     {
       "id": "kansai-2026",
@@ -640,7 +659,11 @@
       "photos": [],
       "createdAt": "2016-08-01T00:00:00.000Z",
       "withGroup": false,
-      "companions": []
+      "companions": [
+        "阿法",
+        "爸",
+        "媽"
+      ]
     },
     {
       "id": "fukuoka-2025",
@@ -710,14 +733,16 @@
       "photos": [],
       "createdAt": "2025-10-01T00:00:00.000Z",
       "withGroup": false,
-      "companions": []
+      "companions": [
+        "小咩"
+      ]
     },
     {
       "id": "yokohama-kamakura-2026",
       "title": "2026年1月 橫濱鎌倉",
       "startDate": "2026-01-17",
       "endDate": "2026-01-20",
-      "notes": "同行：阿閒、梗梗。去回都是經濟艙，機上註記 Wifi Magic5，各可累積 931 哩。",
+      "notes": "同行：梗梗。去回都是經濟艙，機上註記 Wifi Magic5，各可累積 931 哩。",
       "stops": [
         {
           "id": "061f5dc9-a05e-4709-bc17-205aeec13dbb",
@@ -763,7 +788,6 @@
       "createdAt": "2026-01-01T00:00:00.000Z",
       "withGroup": false,
       "companions": [
-        "阿閒",
         "梗梗"
       ]
     },
@@ -890,7 +914,11 @@
       "photos": [],
       "createdAt": "2026-09-01T00:00:00.000Z",
       "withGroup": true,
-      "companions": []
+      "companions": [
+        "阿法",
+        "爸",
+        "媽"
+      ]
     }
   ],
   "photos": []

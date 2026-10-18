@@ -10,7 +10,7 @@ assert.deepEqual(
   ["大阪", "大阪", "大阪", "大阪"],
 )
 assert.equal(japan.stops[0]?.cityId, "jp-osaka")
-assert.deepEqual(japan.companions, ["梗梗", "丹丹", "小咩(ㄒㄒ)"])
+assert.deepEqual(japan.companions, ["梗梗", "丹丹", "小咩"])
 assert.equal(japan.withGroup, false)
 assert.deepEqual(
   japan.flights.map((flight) => `${flight.aircraft} ${flight.route}`),

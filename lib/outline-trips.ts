@@ -39,7 +39,7 @@ export function createJapanJun2023Trip(): Trip {
     title: JAPAN_JUN_2023_TITLE,
     startDate: "2023-06-02",
     endDate: "2023-06-05",
-    notes: "同行：梗梗、丹丹、小咩(ㄒㄒ)。6/2–6/4 住 MIMARU 難波 STATION。",
+    notes: "同行：梗梗、丹丹、小咩。6/2–6/4 住 MIMARU 難波 STATION。",
     ...partyFor(JAPAN_JUN_2023_TRIP_ID),
     stops: [
       arrival,

@@ -21,9 +21,11 @@ assert.deepEqual(
 const text = `${trip.notes}\n${trip.stops.map((stop) => stop.note).join("\n")}\n${trip.flights.map((flight) => `${flight.aircraft} ${flight.route}`).join("\n")}`
 for (const phrase of [
   "實際是 2016",
-  "丹丹吃漢堡",
+  "丹丹",
+  "小咩",
+  "萍萍",
+  "慈憶",
   "ㄆㄆ",
-  "阿閒",
   "梗梗",
   "24000",
   "2050",

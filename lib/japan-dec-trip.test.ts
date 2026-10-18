@@ -22,8 +22,9 @@ assert.deepEqual(
   trip.stays.map((stay) => stay.name),
   ["京都大倉飯店", "東京迪士尼樂園飯店", "迪士尼大使飯店", "富士景觀飯店", "拉維斯塔富士河口湖"],
 )
-assert.match(trip.notes, /姊/)
+assert.match(trip.notes, /阿法/)
 assert.match(trip.notes, /爸/)
+assert.match(trip.notes, /媽/)
 assert.doesNotMatch(trip.notes, /[A-Z]{4,}/)
 assert.equal(trip.notes.includes("207945368"), false)
 const hidden = `${trip.notes}\n${trip.stops.map((stop) => stop.note).join("\n")}`

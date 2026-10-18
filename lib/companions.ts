@@ -6,33 +6,61 @@ export type Party = {
 }
 
 export const PARTY: Record<string, Party> = {
+  "austria-czech-2010": {
+    withGroup: true,
+    companions: ["阿法", "爸", "媽"],
+  },
+  "hakone-2011": {
+    withGroup: false,
+    companions: ["阿法", "爸", "媽"],
+  },
   "tokyo-2016-feb": {
     withGroup: false,
-    companions: ["丹丹吃漢堡", "ㄆㄆ", "阿閒", "ㄒㄒ", "ㄘㄘ", "梗梗"],
+    companions: ["梗梗", "丹丹", "小咩", "萍萍", "慈憶"],
+  },
+  "kansai-2026": {
+    withGroup: false,
+    companions: ["阿法", "爸", "媽"],
+  },
+  "germany-2017": {
+    withGroup: true,
+    companions: ["阿法", "爸", "媽"],
+  },
+  "russia-2018": {
+    withGroup: true,
+    companions: ["阿法", "爸", "媽"],
   },
   "japan-2018": {
     withGroup: false,
-    companions: ["76", "DADA", "梗梗", "我廢"],
+    companions: ["76", "DADA", "梗梗"],
   },
   "japan-2019": {
     withGroup: false,
     companions: ["待待", "梗梗"],
   },
+  "japan-jun-2023": {
+    withGroup: false,
+    companions: ["梗梗", "丹丹", "小咩"],
+  },
+  "tokyo-may-2024": {
+    withGroup: false,
+    companions: ["阿法", "孟君", "76"],
+  },
   "japan-dec-2024": {
     withGroup: false,
-    companions: ["姊", "爸"],
+    companions: ["阿法", "爸", "媽"],
+  },
+  "fukuoka-2025": {
+    withGroup: false,
+    companions: ["小咩"],
   },
   "yokohama-kamakura-2026": {
     withGroup: false,
-    companions: ["阿閒", "梗梗"],
+    companions: ["梗梗"],
   },
   "aurora-pacific-2026": {
     withGroup: true,
-    companions: [],
-  },
-  "japan-jun-2023": {
-    withGroup: false,
-    companions: ["梗梗", "丹丹", "小咩(ㄒㄒ)"],
+    companions: ["阿法", "爸", "媽"],
   },
 }
 
