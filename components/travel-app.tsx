@@ -20,6 +20,7 @@ import { TraceImportDialog, type TraceImport } from "@/components/trace-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
 import { companionMatches, companionNames } from "@/lib/companions"
+import { publicShareUrl } from "@/lib/share-url"
 import { EDITOR_ACCESS_TOKEN, editorToken, tokensMatch } from "@/lib/site-access"
 import { clearAccess, EDITOR_GATE, hasAccess, saveRemember, saveSession } from "@/lib/site-gate"
 import { createDemoTrips } from "@/lib/demo"
@@ -282,7 +283,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
 
   async function copyShareLink() {
     try {
-      await navigator.clipboard.writeText(window.location.origin)
+      await navigator.clipboard.writeText(publicShareUrl(window.location.href))
       notify("已複製網址")
     } catch {
       notify("無法複製，請手動選取網址")
@@ -1313,7 +1314,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
 }
 
 function ShareLinkNotice() {
-  const origin = window.location.origin
+  const origin = publicShareUrl(window.location.href)
   const localOnly = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
   return (
     <div className="space-y-2">
