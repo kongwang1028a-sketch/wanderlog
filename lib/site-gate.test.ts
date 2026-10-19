@@ -1,5 +1,14 @@
 import assert from "node:assert/strict"
-import { clearAccess, hasAccess, REMEMBER_KEY, REMEMBER_MS, saveRemember, saveSession, SESSION_KEY } from "./site-gate"
+import {
+  clearAccess,
+  EDITOR_GATE,
+  hasAccess,
+  REMEMBER_KEY,
+  REMEMBER_MS,
+  saveRemember,
+  saveSession,
+  SESSION_KEY,
+} from "./site-gate"
 
 type Memory = { getItem(key: string): string | null; setItem(key: string, value: string): void; removeItem(key: string): void }
 
@@ -36,5 +45,14 @@ assert.equal(local.getItem(REMEMBER_KEY), null)
 
 clearAccess(local, session)
 assert.equal(hasAccess(local, session, now), false)
+
+saveRemember(local, session, now)
+saveRemember(local, session, now, EDITOR_GATE)
+assert.equal(hasAccess(local, session, now), true)
+assert.equal(hasAccess(local, session, now, EDITOR_GATE), true)
+clearAccess(local, session, EDITOR_GATE)
+assert.equal(hasAccess(local, session, now), true)
+assert.equal(hasAccess(local, session, now, EDITOR_GATE), false)
+clearAccess(local, session)
 
 console.log("site-gate ok")

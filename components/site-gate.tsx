@@ -4,7 +4,7 @@ import { useEffect, useState, type ComponentType, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { accessToken, SITE_ACCESS_TOKEN, tokensMatch } from "@/lib/site-access"
-import { clearAccess, hasAccess, saveRemember, saveSession } from "@/lib/site-gate"
+import { clearAccess, EDITOR_GATE, hasAccess, saveRemember, saveSession } from "@/lib/site-gate"
 
 type AppComponent = ComponentType<{ onLock: () => void }>
 
@@ -36,6 +36,7 @@ export function SiteGate() {
 
   function lock() {
     clearAccess(localStorage, sessionStorage)
+    clearAccess(localStorage, sessionStorage, EDITOR_GATE)
     setPassword("")
     setError("")
     setStatus("locked")

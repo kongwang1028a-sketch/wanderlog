@@ -13,6 +13,7 @@ export function DetailPanel({
   trip,
   pin,
   focusStopId,
+  canEdit,
   onFocusStop,
   onOpenTrip,
   onEdit,
@@ -22,6 +23,7 @@ export function DetailPanel({
   trip: Trip | null
   pin: Pin | null
   focusStopId: string | null
+  canEdit: boolean
   onFocusStop: (stop: Stop) => void
   onOpenTrip: (tripId: string, stopId: string) => void
   onEdit: (tripId: string) => void
@@ -51,13 +53,14 @@ export function DetailPanel({
           <TripBody
             trip={trip}
             focusStopId={focusStopId}
+            canEdit={canEdit}
             onFocusStop={onFocusStop}
           />
         ) : pin ? (
           <PlaceBody pin={pin} onOpenTrip={onOpenTrip} />
         ) : null}
       </div>
-      {trip && (
+      {trip && canEdit && (
         <div className="flex gap-2 border-t bg-card px-4 py-3">
           <Button className="flex-1" onClick={() => onEdit(trip.id)}>
             <Pencil />
@@ -76,10 +79,12 @@ export function DetailPanel({
 function TripBody({
   trip,
   focusStopId,
+  canEdit,
   onFocusStop,
 }: {
   trip: Trip
   focusStopId: string | null
+  canEdit: boolean
   onFocusStop: (stop: Stop) => void
 }) {
   const focused = trip.stops.find((stop) => stop.id === focusStopId) ?? trip.stops[0]
@@ -188,7 +193,7 @@ function TripBody({
 
       <section>
         <h3 className="mb-2 font-display text-lg">照片與雲端</h3>
-        <PhotoGallery photos={trip.photos} focusStopId={focused?.id} />
+        <PhotoGallery photos={trip.photos} focusStopId={focused?.id} canEdit={canEdit} />
       </section>
     </div>
   )

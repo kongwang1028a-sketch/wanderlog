@@ -10,9 +10,11 @@ import type { PhotoRef } from "@/lib/types"
 export function PhotoGallery({
   photos,
   focusStopId,
+  canEdit = false,
 }: {
   photos: PhotoRef[]
   focusStopId?: string | null
+  canEdit?: boolean
 }) {
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [missing, setMissing] = useState<Record<string, boolean>>({})
@@ -56,7 +58,9 @@ export function PhotoGallery({
   if (photos.length === 0) {
     return (
       <p className="rounded-2xl bg-secondary px-3 py-4 text-sm leading-6 text-muted-foreground">
-        這趟還沒有照片。編輯旅程時可以上傳圖片，或貼上 Google 雲端、iCloud 的分享連結。
+        {canEdit
+          ? "這趟還沒有照片。編輯旅程時可以上傳圖片，或貼上 Google 雲端、iCloud 的分享連結。"
+          : "這趟還沒有照片。"}
       </p>
     )
   }

@@ -1,8 +1,8 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { Download, Flag, ListPlus, LocateFixed, Lock, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react"
+import { Download, Flag, KeyRound, ListPlus, LocateFixed, Lock, Map as MapIcon, Plus, Share2, Upload } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,8 @@ import { TraceImportDialog, type TraceImport } from "@/components/trace-import"
 import { TripForm } from "@/components/trip-form"
 import type { Camera, RouteStop } from "@/components/world-map"
 import { companionMatches, companionNames } from "@/lib/companions"
+import { EDITOR_ACCESS_TOKEN, editorToken, tokensMatch } from "@/lib/site-access"
+import { clearAccess, EDITOR_GATE, hasAccess, saveRemember, saveSession } from "@/lib/site-gate"
 import { createDemoTrips } from "@/lib/demo"
 import { publishActiveBook, reconcilePublishedBook, type LiveSyncResult } from "@/lib/live-sync"
 import { formatRange, isWholeMonth, isWholeYear, totalTravelDays } from "@/lib/format"
@@ -108,6 +110,12 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   const [syncNote, setSyncNote] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [canEdit, setCanEdit] = useState(false)
+  const [unlockOpen, setUnlockOpen] = useState(false)
+  const [editorPassword, setEditorPassword] = useState("")
+  const [editorRemember, setEditorRemember] = useState(true)
+  const [editorError, setEditorError] = useState("")
+  const [editorPending, setEditorPending] = useState(false)
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [traceOpen, setTraceOpen] = useState(false)
   const [bookNameDraft, setBookNameDraft] = useState("")
@@ -117,6 +125,14 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   const importRef = useRef<HTMLInputElement>(null)
   const cameraSeq = useRef(0)
   const [handledAuroraFocus, setHandledAuroraFocus] = useState<string | null>(null)
+
+  function editorUnlocked() {
+    return hasAccess(localStorage, sessionStorage, Date.now(), EDITOR_GATE)
+  }
+
+  useEffect(() => {
+    setCanEdit(editorUnlocked())
+  }, [])
 
   function cameraToken(prefix: string) {
     cameraSeq.current += 1
@@ -146,6 +162,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
       }
     }
     await applyPublishedFootprints({ ...staticBundle, photos: Array.isArray(bundle?.photos) ? bundle.photos : [] })
+    if (!editorUnlocked()) return
     const result = await reconcilePublishedBook(staticBundle)
     const note = describeSync(result)
     if (note) setSyncNote(note)
@@ -170,7 +187,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
           photos: Array.isArray(parsed.photos) ? parsed.photos : [],
         }
         await applyPublishedFootprints(bundle)
-        if (cancel) return
+        if (cancel || !editorUnlocked()) return
         const result = await reconcilePublishedBook(bundle)
         if (cancel) return
         const note = describeSync(result)
@@ -179,11 +196,13 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
         if (result === "pulled") notify("已更新為其他裝置改過的旅程")
         if (result === "failed") notify("連不到共用紀錄，修改先留在這台")
       } catch {
-        if (!cancel) setSyncNote("目前連不到共用紀錄，修改先留在這台。")
+        if (!cancel && editorUnlocked()) setSyncNote("目前連不到共用紀錄，修改先留在這台。")
       }
     })()
     const onFocus = () => {
-      void syncPublished().catch(() => setSyncNote("目前連不到共用紀錄，修改先留在這台。"))
+      void syncPublished().catch(() => {
+        if (editorUnlocked()) setSyncNote("目前連不到共用紀錄，修改先留在這台。")
+      })
     }
     window.addEventListener("focus", onFocus)
     return () => {
@@ -229,6 +248,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   function addBook() {
+    if (!canEdit) return
     const created = createBook(bookNameDraft)
     if (!created) return
     setBookNameDraft("")
@@ -237,6 +257,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   async function deleteBook(id: string) {
+    if (!canEdit) return
     const removed = removeBook(id)
     for (const trip of removed) {
       for (const photo of trip.photos) {
@@ -247,6 +268,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   function askRemoveBook(book: FootprintBook) {
+    if (!canEdit) return
     setShareOpen(false)
     setConfirm({
       title: `刪除「${book.name}」的紀錄？`,
@@ -367,7 +389,42 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     setMobileView("map")
   }
 
+  function endEditing() {
+    clearAccess(localStorage, sessionStorage, EDITOR_GATE)
+    setCanEdit(false)
+    setEditor(null)
+    setPendingPick(null)
+    setUnlockOpen(false)
+    setMemoryOpen(false)
+    setTraceOpen(false)
+    setEditorPassword("")
+    setEditorError("")
+    notify("已回到只能查看")
+  }
+
+  async function submitEditorPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setEditorPending(true)
+    try {
+      const actual = await editorToken(editorPassword)
+      if (!tokensMatch(actual, EDITOR_ACCESS_TOKEN)) {
+        setEditorError("密碼不對")
+        return
+      }
+      if (editorRemember) saveRemember(localStorage, sessionStorage, Date.now(), EDITOR_GATE)
+      else saveSession(sessionStorage, localStorage, EDITOR_GATE)
+      setEditorPassword("")
+      setEditorError("")
+      setCanEdit(true)
+      setUnlockOpen(false)
+      notify("可以編輯這本足跡了")
+    } finally {
+      setEditorPending(false)
+    }
+  }
+
   function startCreate() {
+    if (!canEdit) return
     setEditor("new")
     setSelectedTripId(null)
     setSelectedPinKey(null)
@@ -377,6 +434,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   function startEdit(tripId: string) {
+    if (!canEdit) return
     setEditor(tripId)
     setPendingPick(null)
     setMobileView("form")
@@ -387,6 +445,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
     blobs: { id: string; blob: Blob }[],
     removedIds: string[],
   ) {
+    if (!canEdit) return
     for (const id of removedIds) await deletePhotoBlob(id)
     for (const item of blobs) await savePhotoBlob(item.id, item.blob)
     updateTrips((current) => {
@@ -418,9 +477,10 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   function askDelete(trip: Trip) {
+    if (!canEdit) return
     setConfirm({
       title: "刪除這趟旅程？",
-      body: `「${trip.title}」會從公開足跡移除，其他裝置打開這個網站後也看不到。雲端連結只是網址，不會刪到 Google 或 iCloud 裡的檔案。`,
+      body: `「${trip.title}」會從這台裝置移除。公開網站要等再發布一次，別人才看不到。雲端連結只是網址，不會刪到 Google 或 iCloud 裡的檔案。`,
       confirmLabel: "刪除",
       action: () => {
         void (async () => {
@@ -445,6 +505,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   function addMemories(drafts: MemoryTrip[]) {
+    if (!canEdit) return
     const createdAt = new Date().toISOString()
     const created = drafts.map((draft) => {
       const approximate = isWholeYear(draft.startDate, draft.endDate) || isWholeMonth(draft.startDate, draft.endDate)
@@ -489,6 +550,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   async function addTraces(drafts: TraceImport[]) {
+    if (!canEdit) return
     const createdAt = new Date().toISOString()
     const created: Trip[] = []
     for (const draft of drafts) {
@@ -551,6 +613,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   function addDemo() {
+    if (!canEdit) return
     const existing = new Set(trips.map((trip) => trip.id))
     const fresh = createDemoTrips().filter((trip) => !existing.has(trip.id))
     if (fresh.length === 0) {
@@ -617,7 +680,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
   }
 
   async function onImportFile(file: File | undefined) {
-    if (!file) return
+    if (!file || !canEdit) return
     try {
       const parsed: unknown = JSON.parse(await file.text())
       if (!parsed || typeof parsed !== "object" || !("trips" in parsed)) {
@@ -721,25 +784,50 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
               <Share2 />
               分享
             </Button>
-            <Button variant="outline" size="icon" className="sm:hidden" aria-label="匯入" onClick={() => importRef.current?.click()}>
-              <Upload />
-            </Button>
+            {canEdit ? (
+              <>
+                <Button variant="outline" size="icon" className="sm:hidden" aria-label="匯入" onClick={() => importRef.current?.click()}>
+                  <Upload />
+                </Button>
+                <Button variant="outline" className="hidden sm:inline-flex" onClick={() => importRef.current?.click()}>
+                  <Upload />
+                  匯入
+                </Button>
+              </>
+            ) : null}
             <Button variant="outline" size="icon" className="sm:hidden" aria-label="匯出" onClick={() => void exportTrips()}>
               <Download />
-            </Button>
-            <Button variant="outline" className="hidden sm:inline-flex" onClick={() => importRef.current?.click()}>
-              <Upload />
-              匯入
             </Button>
             <Button variant="outline" className="hidden sm:inline-flex" onClick={() => void exportTrips()}>
               <Download />
               匯出
             </Button>
-            <Button onClick={startCreate}>
-              <Plus />
-              <span className="hidden sm:inline">新增旅程</span>
-              <span className="sm:hidden">新增</span>
-            </Button>
+            {canEdit ? (
+              <>
+                <Button variant="outline" onClick={endEditing} aria-label="結束編輯">
+                  <span className="hidden sm:inline">結束編輯</span>
+                  <span className="sm:hidden">結束</span>
+                </Button>
+                <Button onClick={startCreate}>
+                  <Plus />
+                  <span className="hidden sm:inline">新增旅程</span>
+                  <span className="sm:hidden">新增</span>
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditorError("")
+                  setUnlockOpen(true)
+                }}
+                aria-label="解鎖編輯"
+              >
+                <KeyRound />
+                <span className="hidden sm:inline">解鎖編輯</span>
+                <span className="sm:hidden">解鎖</span>
+              </Button>
+            )}
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -757,7 +845,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
             showAside ? "flex" : "hidden",
           )}
         >
-          {editor !== null ? (
+          {editor !== null && canEdit ? (
             <TripForm
               key={editor}
               initial={editor === "new" ? null : editingTrip}
@@ -805,15 +893,21 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
                     </FilterChip>
                   ))}
                 </div>
-                {syncNote && <p className="text-xs leading-5 text-muted-foreground">{syncNote}</p>}
-                <Button type="button" variant="outline" className="w-full" onClick={() => setMemoryOpen(true)}>
-                  <ListPlus />
-                  一次補上很多趟
-                </Button>
-                <Button type="button" variant="outline" className="w-full" onClick={() => setTraceOpen(true)}>
-                  <LocateFixed />
-                  從照片或定位找出旅程
-                </Button>
+                {canEdit && syncNote ? <p className="text-xs leading-5 text-muted-foreground">{syncNote}</p> : null}
+                {canEdit ? (
+                  <>
+                    <Button type="button" variant="outline" className="w-full" onClick={() => setMemoryOpen(true)}>
+                      <ListPlus />
+                      一次補上很多趟
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full" onClick={() => setTraceOpen(true)}>
+                      <LocateFixed />
+                      從照片或定位找出旅程
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-xs leading-5 text-muted-foreground">目前只能查看。要改旅程，請按右上角的解鎖編輯。</p>
+                )}
               </div>
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
                 {filtered.length === 0 ? (
@@ -828,7 +922,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
                           ? "換一個關鍵字，或清掉年份。"
                           : `${companion} 還沒有出現在剩下的旅程裡。`}
                     </p>
-                    {trips.length === 0 && (
+                    {trips.length === 0 && canEdit && (
                       <div className="mt-4 flex flex-col gap-2">
                         <Button onClick={startCreate}>新增第一趟旅程</Button>
                         <Button variant="outline" onClick={addDemo}>
@@ -881,14 +975,16 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
                             )}
                           </span>
                         </button>
-                        <div className="mt-2 flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => startEdit(trip.id)}>
-                            編輯
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => askDelete(trip)}>
-                            刪除
-                          </Button>
-                        </div>
+                        {canEdit ? (
+                          <div className="mt-2 flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => startEdit(trip.id)}>
+                              編輯
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => askDelete(trip)}>
+                              刪除
+                            </Button>
+                          </div>
+                        ) : null}
                       </article>
                     )
                   })
@@ -934,6 +1030,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
               if (stop) focusStop(stop)
             }}
             onPick={(lat, lng) => {
+              if (!canEdit) return
               setPendingPick({ lat, lng })
               if (!desktop) setMobileView("form")
               notify("已選到一個位置，確認要加入哪個城市")
@@ -972,7 +1069,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
               <p className="mt-1">紅色是城市範圍。旗幟上是去過的年份。點開旅程後，數字是停留順序。</p>
               </div>
             </div>
-            {!editor && trips.length === 0 && (
+            {!editor && trips.length === 0 && canEdit && (
               <div className="pointer-events-auto absolute inset-x-4 bottom-6 mx-auto max-w-sm rounded-3xl bg-card p-4 shadow-xl md:bottom-16">
                 <p className="font-display text-2xl">從這裡開始</p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -988,6 +1085,7 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
                 trip={selectedTrip}
                 pin={selectedTrip ? null : selectedPin}
                 focusStopId={focusStopId}
+                canEdit={canEdit}
                 onFocusStop={focusStop}
                 onOpenTrip={(tripId, stopId) => openTrip(tripId, stopId)}
                 onEdit={startEdit}
@@ -1038,24 +1136,91 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
         </div>
       )}
 
-      <MemoryImportDialog open={memoryOpen} onOpenChange={setMemoryOpen} existing={trips} onAdd={addMemories} />
-      <TraceImportDialog open={traceOpen} onOpenChange={setTraceOpen} existing={trips} onAdd={(drafts) => void addTraces(drafts)} />
+      {canEdit ? (
+        <>
+          <MemoryImportDialog open={memoryOpen} onOpenChange={setMemoryOpen} existing={trips} onAdd={addMemories} />
+          <TraceImportDialog open={traceOpen} onOpenChange={setTraceOpen} existing={trips} onAdd={(drafts) => void addTraces(drafts)} />
+        </>
+      ) : null}
+      <Dialog
+        open={unlockOpen}
+        onOpenChange={(open) => {
+          setUnlockOpen(open)
+          if (!open) {
+            setEditorPassword("")
+            setEditorError("")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>解鎖編輯</DialogTitle>
+            <DialogDescription>
+              這組密碼只給可以改旅程的人。別人知道進入密碼，仍然只能查看。
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(event) => void submitEditorPassword(event)} className="space-y-3">
+            <input className="sr-only" type="text" name="username" autoComplete="username" defaultValue="wanderlog-edit" tabIndex={-1} aria-hidden="true" />
+            <label className="block space-y-2 text-sm" htmlFor="editor-password">
+              編輯密碼
+              <Input
+                id="editor-password"
+                name="editor-password"
+                type="password"
+                autoComplete="current-password"
+                autoFocus
+                required
+                value={editorPassword}
+                className="h-10 bg-card"
+                onChange={(event) => {
+                  setEditorPassword(event.target.value)
+                  setEditorError("")
+                }}
+              />
+            </label>
+            <label className="flex items-start gap-2 text-sm leading-6" htmlFor="remember-editor">
+              <input
+                id="remember-editor"
+                type="checkbox"
+                className="mt-1 size-4 accent-terracotta"
+                checked={editorRemember}
+                onChange={(event) => setEditorRemember(event.target.checked)}
+              />
+              <span>
+                在這台裝置記住一週
+                <span className="mt-0.5 block text-xs text-muted-foreground">一週內不用再輸入編輯密碼</span>
+              </span>
+            </label>
+            {editorError ? <p className="text-sm text-destructive">{editorError}</p> : null}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setUnlockOpen(false)}>
+                取消
+              </Button>
+              <Button type="submit" disabled={editorPending}>
+                {editorPending ? "確認中…" : "解鎖"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>讓別人看到我的旅程</DialogTitle>
             <DialogDescription>
-              在這個網站改標題、行程或刪掉一筆，其他裝置打開同一個網址就會看到。另外建立的足跡本仍只留在這台裝置。上傳的照片檔也不會跟著到別的裝置。
+              別人打開這個網站、輸入進入密碼後，只能看地圖和旅程，不能新增、修改或刪除。上傳的照片檔只留在這台裝置。
             </DialogDescription>
           </DialogHeader>
           {shareOpen && <ShareLinkNotice />}
           <p className="text-sm leading-6 text-muted-foreground">
-            改完之後不用再下載檔案。另一支手機或電腦打開同一個網站，就會看到你剛改的標題和行程。
+            要改標題或行程，按「解鎖編輯」。解鎖會在這台裝置記住一週，按「結束編輯」就回到只能查看。公開網站上的內容，要等這份足跡再發布一次，別人才看得到新的。
           </p>
           <div className="space-y-2">
             <p className="font-medium">這台裝置上的足跡本</p>
             <p className="text-xs leading-5 text-muted-foreground">
-              共用同一台電腦或手機時，各自建立一本。切換之後看到的旅程就不同。
+              {canEdit
+                ? "共用同一台電腦或手機時，各自建立一本。切換之後看到的旅程就不同。"
+                : "現在看的是這本。要另外建立或切換，請先解鎖編輯。"}
             </p>
             <ul className="max-h-40 space-y-1 overflow-y-auto">
               {bookStore.books.map((book) => {
@@ -1068,12 +1233,16 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
                         "min-w-0 flex-1 rounded-xl px-3 py-2 text-left",
                         active ? "bg-[#e7f3f1] text-sea" : "hover:bg-secondary",
                       )}
-                      onClick={() => openBook(book.id)}
+                      onClick={() => {
+                        if (canEdit) openBook(book.id)
+                      }}
                     >
                       <span className="block truncate font-medium">{book.name}</span>
-                      <span className="text-xs text-muted-foreground">{active ? "使用中" : "切換到這本"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {active ? "使用中" : canEdit ? "切換到這本" : "只能查看"}
+                      </span>
                     </button>
-                    {bookStore.books.length > 1 && (
+                    {canEdit && bookStore.books.length > 1 && (
                       <Button type="button" variant="ghost" size="sm" onClick={() => askRemoveBook(book)}>
                         刪除
                       </Button>
@@ -1082,33 +1251,37 @@ export function TravelApp({ onLock }: { onLock?: () => void }) {
                 )
               })}
             </ul>
-            <div className="flex gap-2">
-              <Input
-                value={bookNameDraft}
-                maxLength={24}
-                placeholder="朋友的名字，例如小明"
-                aria-label="新的足跡本名稱"
-                className="h-10 bg-card"
-                onChange={(event) => setBookNameDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault()
-                    addBook()
-                  }
-                }}
-              />
-              <Button type="button" variant="secondary" onClick={addBook} disabled={!bookNameDraft.trim()}>
-                建立
-              </Button>
-            </div>
+            {canEdit ? (
+              <div className="flex gap-2">
+                <Input
+                  value={bookNameDraft}
+                  maxLength={24}
+                  placeholder="朋友的名字，例如小明"
+                  aria-label="新的足跡本名稱"
+                  className="h-10 bg-card"
+                  onChange={(event) => setBookNameDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      addBook()
+                    }
+                  }}
+                />
+                <Button type="button" variant="secondary" onClick={addBook} disabled={!bookNameDraft.trim()}>
+                  建立
+                </Button>
+              </div>
+            ) : null}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => void copyShareLink()}>
               複製網址
             </Button>
-            <Button type="button" onClick={() => void downloadPublicFootprints()}>
-              下載公開足跡
-            </Button>
+            {canEdit ? (
+              <Button type="button" onClick={() => void downloadPublicFootprints()}>
+                下載公開足跡
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>
